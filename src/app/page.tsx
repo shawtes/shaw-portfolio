@@ -424,7 +424,7 @@ export default function Portfolio() {
   const Research = () => {
     const p = PROJECTS.find((x) => x.id === "lsu-research")!;
     return (<>
-      <Sec s="rs-t">Published <Grad>Research</Grad></Sec>
+      <Sec s="rs-t"><Grad>Research</Grad></Sec>
       <Card s="rs-p">
         <div style={{ display: "flex", alignItems: mob ? "flex-start" : "center", gap: 12, marginBottom: 20, flexDirection: mob ? "column" : "row" }}>
           <div style={{ width: 48, height: 48, borderRadius: 13, background: c.accent2 + "14", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><BookOpen size={22} color={c.accent2} /></div>
