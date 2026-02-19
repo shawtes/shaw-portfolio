@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, GraduationCap, Trophy, Award, Package, FlaskConical, Star, Github, FileText, Mail, Linkedin, Phone, ChevronLeft, ExternalLink, Sun, Moon, Brain, BarChart3, Baseline as Baseball, TrendingUp, Hospital, UtensilsCrossed, Users, Briefcase, Send, Download, CircleDot, Boxes, BookOpen, Code2, Cloud, Terminal, Cpu, Database, Globe, Container, GitBranch, Layers, Rocket, Zap, ArrowRight, Check, Sparkles, Activity, Building2, ScrollText, TestTube2, Hash, Music } from "lucide-react";
+import { MapPin, GraduationCap, Trophy, Award, Package, FlaskConical, Star, Github, FileText, Mail, Linkedin, Phone, ChevronLeft, ExternalLink, Sun, Moon, Brain, BarChart3, Baseline as Baseball, TrendingUp, Hospital, UtensilsCrossed, Users, Briefcase, Send, Download, CircleDot, Boxes, BookOpen, Code2, Cloud, Terminal, Cpu, Database, Globe, Container, GitBranch, Layers, Rocket, Zap, ArrowRight, Check, Sparkles, Activity, Building2, ScrollText, TestTube2, Hash, Music, Menu, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -34,7 +34,7 @@ const PROJECTS: Project[] = [
     subtitle: "Full-Stack Beat Store for Music Producer",
     desc: "Built a complete e-commerce beat store for my roommate, a music producer. Next.js 16 + Supabase + Stripe with audio player, licensing system, admin dashboard, email notifications, and free download gating. A personal platform to market beats and showcase his portfolio.",
     longDesc: [
-      "Designed and built a full-stack beat store from scratch for my roommate — a music producer who wanted a personal platform to market his work beyond generic marketplaces.",
+      "Designed and built a full-stack beat store from scratch for my roommate \u2014 a music producer who wanted a personal platform to market his work beyond generic marketplaces.",
       "Next.js 16 with App Router, Supabase for auth/database/storage, Stripe for payments with webhook-based order fulfillment, and Resend for transactional emails (purchase receipts, free download links, new drop alerts).",
       "Custom audio player with waveform visualization, sticky playback controls, and seamless page navigation. License system with PDF generation for MP3 Lease, WAV Lease, and Exclusive rights.",
       "Admin dashboard with beat upload (drag-and-drop with tag previews), order management, customer analytics, and real-time sales tracking. Free download email gating for lead generation.",
@@ -43,7 +43,7 @@ const PROJECTS: Project[] = [
     tech: ["Next.js 16", "TypeScript", "React 19", "Supabase", "Stripe", "Resend", "Upstash Redis", "Tailwind CSS"],
     metrics: [{ k: "Pages", v: "12+" }, { k: "API Routes", v: "14" }, { k: "Stack", v: "Full" }, { k: "Emails", v: "3 Types" }],
     color: "#E8B84B", Icon: Music, github: "https://github.com/shawtes/prodbykaine", live: "", cat: "SWE",
-    team: "Solo", arch: "Next.js 16 App Router → Supabase (Auth + DB + Storage) → Stripe Checkout + Webhooks → Resend Emails → Upstash Rate Limiting",
+    team: "Solo", arch: "Next.js 16 App Router \u2192 Supabase (Auth + DB + Storage) \u2192 Stripe Checkout + Webhooks \u2192 Resend Emails \u2192 Upstash Rate Limiting",
   },
   {
     id: "wdym86", title: "WDYM86", award: "UGA Hacks '26 Runner-Up", awardIcon: Award,
@@ -174,47 +174,75 @@ export default function Portfolio() {
   const [form, setForm] = useState({ name: "", email: "", msg: "" });
   const [sent, setSent] = useState(false);
   const [typed, setTyped] = useState("");
+  const [w, setW] = useState(1200);
+  const [menuOpen, setMenuOpen] = useState(false);
   const c = T[dark ? "dark" : "light"];
+  const mob = w <= 640;
+  const tab = w <= 900;
 
-  const go = useCallback((p: string, id: string | null = null) => { setPg(p); setPid(id); setVis(new Set()); window.scrollTo?.({ top: 0 }); }, []);
+  const go = useCallback((p: string, id: string | null = null) => { setPg(p); setPid(id); setVis(new Set()); setMenuOpen(false); window.scrollTo?.({ top: 0 }); }, []);
 
-  useEffect(() => { const h = (e: MouseEvent) => setMouse({ x: e.clientX, y: e.clientY }); window.addEventListener("mousemove", h); return () => window.removeEventListener("mousemove", h); }, []);
+  useEffect(() => { const h = () => setW(window.innerWidth); h(); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
+  useEffect(() => { if (mob) return; const h = (e: MouseEvent) => setMouse({ x: e.clientX, y: e.clientY }); window.addEventListener("mousemove", h); return () => window.removeEventListener("mousemove", h); }, [mob]);
   useEffect(() => { const ob = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { const s = (e.target as HTMLElement).dataset.s; if (s) setVis((p) => new Set([...p, s])); } }), { threshold: 0.08 }); setTimeout(() => document.querySelectorAll("[data-s]").forEach((el) => ob.observe(el)), 60); return () => ob.disconnect(); }, [pg, pid, filter]);
   useEffect(() => { if (pg !== "home") return; let i = 0; const t = "Software Engineer \u00B7 ML Systems \u00B7 Full-Stack \u00B7 Research"; const iv = setInterval(() => { if (i <= t.length) { setTyped(t.slice(0, i)); i++; } else clearInterval(iv); }, 42); return () => clearInterval(iv); }, [pg]);
 
   // Shared UI
   const Tag = ({ children }: { children: React.ReactNode }) => <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, fontFamily: "monospace", background: c.tag, color: c.accent, margin: "0 5px 5px 0", border: `1px solid ${c.accent}14`, letterSpacing: ".02em" }}>{children}</span>;
   const Card = ({ children, delay = 0, s, sx = {} }: { children: React.ReactNode; delay?: number; s: string; sx?: React.CSSProperties }) => { const sh = vis.has(s); return (
-    <div data-s={s} style={{ background: c.card, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", border: `1px solid ${c.border}`, borderRadius: 18, padding: 24, transition: "all .5s cubic-bezier(.16,1,.3,1),opacity .55s ease,transform .55s ease", opacity: sh ? 1 : 0, transform: sh ? "translateY(0)" : "translateY(20px)", transitionDelay: `${delay}ms`, overflow: "hidden", ...sx }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = c.hov; e.currentTarget.style.borderColor = c.accent + "28"; e.currentTarget.style.boxShadow = `0 12px 40px ${c.glow}`; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = c.card; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = "none"; }}
+    <div data-s={s} style={{ background: c.card, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", border: `1px solid ${c.border}`, borderRadius: 18, padding: mob ? 16 : 24, transition: "all .5s cubic-bezier(.16,1,.3,1),opacity .55s ease,transform .55s ease", opacity: sh ? 1 : 0, transform: sh ? "translateY(0)" : "translateY(20px)", transitionDelay: `${delay}ms`, overflow: "hidden", ...sx }}
+      onMouseEnter={(e) => { if (!mob) { e.currentTarget.style.background = c.hov; e.currentTarget.style.borderColor = c.accent + "28"; e.currentTarget.style.boxShadow = `0 12px 40px ${c.glow}`; } }}
+      onMouseLeave={(e) => { if (!mob) { e.currentTarget.style.background = c.card; e.currentTarget.style.borderColor = c.border; e.currentTarget.style.boxShadow = "none"; } }}
     >{children}</div>); };
-  const Sec = ({ children, s }: { children: React.ReactNode; s: string }) => <h2 data-s={s} style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.03em", marginBottom: 28, opacity: vis.has(s) ? 1 : 0, transform: vis.has(s) ? "none" : "translateY(14px)", transition: "all .5s ease" }}>{children}</h2>;
-  const Btn = ({ children, href, onClick, primary, sx = {} }: { children: React.ReactNode; href?: string; onClick?: () => void; primary?: boolean; sx?: React.CSSProperties }) => { const st: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: primary ? "10px 22px" : "8px 16px", borderRadius: 10, border: primary ? "none" : `1px solid ${c.border}`, background: primary ? c.grad : "transparent", color: primary ? "#fff" : c.text, fontWeight: 700, fontSize: 13, cursor: "pointer", textDecoration: "none", fontFamily: "inherit", transition: "all .2s", ...sx }; const ev = { onMouseEnter: (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 20px ${c.glow}`; }, onMouseLeave: (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; } }; return href ? <a href={href} target="_blank" rel="noopener noreferrer" style={st} {...ev}>{children}</a> : <button onClick={onClick} style={st} {...ev}>{children}</button>; };
+  const Sec = ({ children, s }: { children: React.ReactNode; s: string }) => <h2 data-s={s} style={{ fontSize: mob ? 22 : 30, fontWeight: 800, letterSpacing: "-.03em", marginBottom: mob ? 18 : 28, opacity: vis.has(s) ? 1 : 0, transform: vis.has(s) ? "none" : "translateY(14px)", transition: "all .5s ease" }}>{children}</h2>;
+  const Btn = ({ children, href, onClick, primary, sx = {} }: { children: React.ReactNode; href?: string; onClick?: () => void; primary?: boolean; sx?: React.CSSProperties }) => { const st: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: primary ? "10px 22px" : "8px 16px", borderRadius: 10, border: primary ? "none" : `1px solid ${c.border}`, background: primary ? c.grad : "transparent", color: primary ? "#fff" : c.text, fontWeight: 700, fontSize: 13, cursor: "pointer", textDecoration: "none", fontFamily: "inherit", transition: "all .2s", ...sx }; const ev = { onMouseEnter: (e: React.MouseEvent<HTMLElement>) => { if (!mob) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 20px ${c.glow}`; } }, onMouseLeave: (e: React.MouseEvent<HTMLElement>) => { if (!mob) { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; } } }; return href ? <a href={href} target="_blank" rel="noopener noreferrer" style={st} {...ev}>{children}</a> : <button onClick={onClick} style={st} {...ev}>{children}</button>; };
   const Mono = ({ children, sx = {} }: { children: React.ReactNode; sx?: React.CSSProperties }) => <span style={{ fontFamily: "'IBM Plex Mono',monospace", ...sx }}>{children}</span>;
   const Grad = ({ children }: { children: React.ReactNode }) => <span style={{ background: c.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{children}</span>;
 
   // Nav
+  const navLinks: [string, string][] = [["Home","home"],["About","about"],["Projects","projects"],["Research","research"],["Experience","experience"],["Contact","contact"]];
   const Nav = () => (
-    <nav style={{ position: "sticky", top: 0, zIndex: 200, padding: "12px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: c.navBg, backdropFilter: "blur(14px)", borderBottom: `1px solid ${c.border}` }}>
+    <nav style={{ position: "sticky", top: 0, zIndex: 200, padding: mob ? "10px 16px" : "12px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: c.navBg, backdropFilter: "blur(14px)", borderBottom: `1px solid ${c.border}` }}>
       <div onClick={() => go("home")} style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer" }}>
         <div style={{ width: 30, height: 30, borderRadius: 9, background: c.grad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff" }}>ST</div>
         <span style={{ fontWeight: 700, fontSize: 14, letterSpacing: "-.02em" }}>shaw<span style={{ color: c.accent }}>tesfaye</span></span>
       </div>
-      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-        {([["Home","home"],["About","about"],["Projects","projects"],["Research","research"],["Experience","experience"],["Contact","contact"]] as const).map(([l, p]) => (
-          <button key={p} onClick={() => go(p)} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: pg === p ? c.accent + "15" : "transparent", color: pg === p ? c.accent : c.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s" }}>{l}</button>
-        ))}
-        <button onClick={() => setDark(!dark)} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${c.border}`, background: c.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 6 }}>
-          {dark ? <Sun size={15} color={c.gold} /> : <Moon size={15} color={c.accent2} />}
-        </button>
-      </div>
+      {/* Desktop nav links */}
+      {!tab && (
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          {navLinks.map(([l, p]) => (
+            <button key={p} onClick={() => go(p)} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: pg === p ? c.accent + "15" : "transparent", color: pg === p ? c.accent : c.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s" }}>{l}</button>
+          ))}
+          <button onClick={() => setDark(!dark)} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${c.border}`, background: c.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 6 }}>
+            {dark ? <Sun size={15} color={c.gold} /> : <Moon size={15} color={c.accent2} />}
+          </button>
+        </div>
+      )}
+      {/* Mobile/Tablet hamburger + theme toggle */}
+      {tab && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => setDark(!dark)} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${c.border}`, background: c.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {dark ? <Sun size={15} color={c.gold} /> : <Moon size={15} color={c.accent2} />}
+          </button>
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${c.border}`, background: c.card, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {menuOpen ? <X size={18} color={c.text} /> : <Menu size={18} color={c.text} />}
+          </button>
+        </div>
+      )}
+      {/* Mobile slide-down menu */}
+      {tab && menuOpen && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: c.navBg, backdropFilter: "blur(14px)", borderBottom: `1px solid ${c.border}`, padding: "8px 16px 16px", display: "flex", flexDirection: "column", gap: 4, zIndex: 300 }}>
+          {navLinks.map(([l, p]) => (
+            <button key={p} onClick={() => go(p)} style={{ padding: "12px 16px", borderRadius: 10, border: "none", background: pg === p ? c.accent + "15" : "transparent", color: pg === p ? c.accent : c.muted, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", textAlign: "left" }}>{l}</button>
+          ))}
+        </div>
+      )}
     </nav>
   );
 
   const Footer = () => (
-    <footer style={{ textAlign: "center", padding: "48px 20px 32px", borderTop: `1px solid ${c.border}`, marginTop: 56 }}>
-      <Mono sx={{ fontSize: 12, color: c.muted, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><Sparkles size={13} color={c.accent} /> Built by Shaw Tesfaye &middot; Designed in Figma &middot; Next.js + TypeScript</Mono>
+    <footer style={{ textAlign: "center", padding: mob ? "32px 16px 24px" : "48px 20px 32px", borderTop: `1px solid ${c.border}`, marginTop: mob ? 32 : 56 }}>
+      <Mono sx={{ fontSize: mob ? 10 : 12, color: c.muted, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, flexWrap: "wrap" }}><Sparkles size={13} color={c.accent} /> Built by Shaw Tesfaye &middot; Designed in Figma &middot; Next.js + TypeScript</Mono>
       <div style={{ fontSize: 11, color: c.muted + "80", marginTop: 6 }}>&copy; 2026 &middot; Atlanta, GA</div>
     </footer>
   );
@@ -222,20 +250,20 @@ export default function Portfolio() {
   // ══════════════ HOME ══════════════
   const Home = () => (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
-        <Card s="hero" sx={{ gridRow: "span 2" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : tab ? "1fr 1fr" : "1.8fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+        <Card s="hero" sx={mob || tab ? {} : { gridRow: "span 2" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: mob ? 16 : 24 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", animation: "pulse 2s infinite" }} />
             <Mono sx={{ fontSize: 11, color: "#22C55E", fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" }}>Open to Opportunities</Mono>
           </div>
-          <h1 style={{ fontSize: 54, fontWeight: 800, lineHeight: 1.0, letterSpacing: "-.045em", marginBottom: 14 }}>Shaw<br /><Grad>Tesfaye</Grad></h1>
-          <Mono sx={{ fontSize: 16, color: c.muted, minHeight: 24 }}>{typed}<span style={{ animation: "blink 1s infinite", color: c.accent }}>|</span></Mono>
-          <div style={{ display: "flex", gap: 10, marginTop: 16, fontSize: 12, color: c.muted, alignItems: "center" }}>
+          <h1 style={{ fontSize: mob ? 36 : tab ? 44 : 54, fontWeight: 800, lineHeight: 1.0, letterSpacing: "-.045em", marginBottom: 14 }}>Shaw<br /><Grad>Tesfaye</Grad></h1>
+          <Mono sx={{ fontSize: mob ? 13 : 16, color: c.muted, minHeight: 24 }}>{typed}<span style={{ animation: "blink 1s infinite", color: c.accent }}>|</span></Mono>
+          <div style={{ display: "flex", gap: 10, marginTop: 16, fontSize: mob ? 11 : 12, color: c.muted, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} /> Atlanta, GA</span>
             <span>&middot;</span>
             <span style={{ display: "flex", alignItems: "center", gap: 4 }}><GraduationCap size={12} /> B.S. CS &mdash; Georgia State (Dec 2026)</span>
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
             <Btn primary onClick={() => go("projects")}><Rocket size={14} /> View Projects</Btn>
             <Btn onClick={() => go("contact")}><Mail size={14} /> Contact</Btn>
           </div>
@@ -257,21 +285,23 @@ export default function Portfolio() {
             </div>
           ))}
         </Card>
-        <Card s="gh" delay={120}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}><Github size={16} color={c.text} /><span style={{ fontWeight: 700, fontSize: 14 }}>GitHub</span></div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(12,1fr)", gap: 2.5, marginBottom: 10 }}>
-            {Array.from({ length: 84 }).map((_, i) => { const s = Math.sin(i * 7.3 + 42) * .5 + .5; return <div key={i} style={{ aspectRatio: "1", borderRadius: 2.5, background: s > .75 ? c.accent : s > .5 ? c.accent + "55" : s > .25 ? c.accent + "20" : c.card }} />; })}
-          </div>
-          <a href="https://github.com/shawtes" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: c.accent, textDecoration: "none", fontWeight: 600, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4 }}>@shawtes <ArrowRight size={12} /></a>
-        </Card>
+        {(!mob) && (
+          <Card s="gh" delay={120} sx={tab ? { gridColumn: "span 2" } : {}}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}><Github size={16} color={c.text} /><span style={{ fontWeight: 700, fontSize: 14 }}>GitHub</span></div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(12,1fr)", gap: 2.5, marginBottom: 10 }}>
+              {Array.from({ length: 84 }).map((_, i) => { const s = Math.sin(i * 7.3 + 42) * .5 + .5; return <div key={i} style={{ aspectRatio: "1", borderRadius: 2.5, background: s > .75 ? c.accent : s > .5 ? c.accent + "55" : s > .25 ? c.accent + "20" : c.card }} />; })}
+            </div>
+            <a href="https://github.com/shawtes" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: c.accent, textDecoration: "none", fontWeight: 600, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4 }}>@shawtes <ArrowRight size={12} /></a>
+          </Card>
+        )}
       </div>
       <Sec s="fp-t">Featured <Grad>Projects</Grad></Sec>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : tab ? "1fr 1fr" : "repeat(3,1fr)", gap: 14 }}>
         {PROJECTS.slice(0, 3).map((p, i) => (
           <Card key={p.id} s={`fp-${i}`} delay={i * 80}>
             <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: p.color + "14", border: `1px solid ${p.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}><p.Icon size={18} color={p.color} /></div>
-              <div><div style={{ fontSize: 14, fontWeight: 700 }}>{p.title} {p.award && <span style={{ fontSize: 11, color: c.gold, display: "inline-flex", alignItems: "center", gap: 3 }}>{p.awardIcon && <p.awardIcon size={10} />} {p.award}</span>}</div><div style={{ fontSize: 11, color: c.muted }}>{p.subtitle}</div></div>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: p.color + "14", border: `1px solid ${p.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><p.Icon size={18} color={p.color} /></div>
+              <div style={{ minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 700 }}>{p.title} {p.award && <span style={{ fontSize: 11, color: c.gold, display: "inline-flex", alignItems: "center", gap: 3 }}>{p.awardIcon && <p.awardIcon size={10} />} {p.award}</span>}</div><div style={{ fontSize: 11, color: c.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.subtitle}</div></div>
             </div>
             <p style={{ fontSize: 12, color: c.muted, lineHeight: 1.6, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.desc}</p>
             <div style={{ display: "flex", flexWrap: "wrap", marginBottom: 10 }}>{p.tech.slice(0, 4).map((t) => <Tag key={t}>{t}</Tag>)}</div>
@@ -287,12 +317,12 @@ export default function Portfolio() {
   const About = () => (
     <>
       <Sec s="ab-t">About <Grad>Me</Grad></Sec>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "2fr 1.2fr", gap: 14 }}>
         <Card s="ab-bio">
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}><ScrollText size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Bio</Mono></div>
-          <p style={{ fontSize: 15, lineHeight: 1.75, marginBottom: 14 }}>I&apos;m <strong>Shaw Tesfaye</strong>, a senior Computer Science student at Georgia State University (graduating December 2026) based in Atlanta, GA. I build ML-driven systems and full-stack applications with a focus on quantitative methods, data engineering, and production-grade software.</p>
-          <p style={{ fontSize: 15, lineHeight: 1.75, marginBottom: 14 }}>My work spans healthcare ML (voice-based dementia detection), quantitative finance (crypto ensemble frameworks, DFS optimization), and full-stack SaaS (restaurant intelligence with 130+ API endpoints). I&apos;ve won or placed in 4 hackathons, authored peer-presented research, and built systems processing hundreds of thousands of data points.</p>
-          <p style={{ fontSize: 15, lineHeight: 1.75 }}>Beyond code, I co-launched ProgSU (Georgia State&apos;s student incubator supporting 10+ startups) and re-established the IEEE chapter at GSU. I also build for friends &mdash; like <button onClick={() => go("project-detail", "prodbykaine")} style={{ color: c.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", fontSize: "inherit", textDecoration: "underline", padding: 0 }}>PRODBYKAINE</button>, a full beat store I built for my roommate to market his music production.</p>
+          <p style={{ fontSize: mob ? 13 : 15, lineHeight: 1.75, marginBottom: 14 }}>I&apos;m <strong>Shaw Tesfaye</strong>, a senior Computer Science student at Georgia State University (graduating December 2026) based in Atlanta, GA. I build ML-driven systems and full-stack applications with a focus on quantitative methods, data engineering, and production-grade software.</p>
+          <p style={{ fontSize: mob ? 13 : 15, lineHeight: 1.75, marginBottom: 14 }}>My work spans healthcare ML (voice-based dementia detection), quantitative finance (crypto ensemble frameworks, DFS optimization), and full-stack SaaS (restaurant intelligence with 130+ API endpoints). I&apos;ve won or placed in 4 hackathons, authored peer-presented research, and built systems processing hundreds of thousands of data points.</p>
+          <p style={{ fontSize: mob ? 13 : 15, lineHeight: 1.75 }}>Beyond code, I co-launched ProgSU (Georgia State&apos;s student incubator supporting 10+ startups) and re-established the IEEE chapter at GSU. I also build for friends &mdash; like <button onClick={() => go("project-detail", "prodbykaine")} style={{ color: c.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", fontSize: "inherit", textDecoration: "underline", padding: 0 }}>PRODBYKAINE</button>, a full beat store I built for my roommate to market his music production.</p>
         </Card>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <Card s="ab-edu" delay={80}>
@@ -315,12 +345,12 @@ export default function Portfolio() {
       </div>
       <Card s="ab-aw" delay={100} sx={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}><Trophy size={14} color={c.gold} /><Mono sx={{ fontSize: 10, color: c.gold, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Honors & Awards</Mono></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: 12 }}>
           {AWARDS.map((a, i) => (
-            <div key={i} style={{ padding: 16, borderRadius: 12, background: a.place === "1st" ? c.gold + "08" : c.card, border: `1px solid ${a.place === "1st" ? c.gold + "18" : c.border}`, textAlign: "center" }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: a.place === "1st" ? c.gold : c.muted, fontFamily: "monospace" }}>{a.place}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6 }}>{a.event}</div>
-              <div style={{ fontSize: 11, color: c.muted, marginTop: 4 }}>{a.what}</div>
+            <div key={i} style={{ padding: mob ? 12 : 16, borderRadius: 12, background: a.place === "1st" ? c.gold + "08" : c.card, border: `1px solid ${a.place === "1st" ? c.gold + "18" : c.border}`, textAlign: "center" }}>
+              <div style={{ fontSize: mob ? 22 : 28, fontWeight: 800, color: a.place === "1st" ? c.gold : c.muted, fontFamily: "monospace" }}>{a.place}</div>
+              <div style={{ fontSize: mob ? 11 : 13, fontWeight: 700, marginTop: 6 }}>{a.event}</div>
+              <div style={{ fontSize: mob ? 10 : 11, color: c.muted, marginTop: 4 }}>{a.what}</div>
               <Mono sx={{ fontSize: 10, color: c.muted, marginTop: 6, display: "block" }}>{a.scope}</Mono>
             </div>
           ))}
@@ -335,25 +365,25 @@ export default function Portfolio() {
     return (<>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <Sec s="pj-t">All <Grad>Projects</Grad></Sec>
-        <div style={{ display: "flex", gap: 5 }}>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           {["All", "SWE", "ML", "Research", "Systems"].map((f) => (
             <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 13px", borderRadius: 7, border: `1px solid ${filter === f ? c.accent + "35" : c.border}`, background: filter === f ? c.accent + "10" : "transparent", color: filter === f ? c.accent : c.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "monospace" }}>{f}</button>
           ))}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(2,1fr)", gap: 14 }}>
         {fp.map((p, i) => (
           <Card key={p.id} s={`pj-${i}`} delay={i * 60}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 11, background: p.color + "14", border: `1px solid ${p.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}><p.Icon size={18} color={p.color} /></div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 700 }}>{p.title} {p.award && <span style={{ fontSize: 11, color: p.award.includes("1st") ? c.gold : c.accent2, display: "inline-flex", alignItems: "center", gap: 3 }}>{p.awardIcon && <p.awardIcon size={10} />} {p.award}</span>}</div><div style={{ fontSize: 11, color: c.muted }}>{p.subtitle}</div></div>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: p.color + "14", border: `1px solid ${p.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><p.Icon size={18} color={p.color} /></div>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 700 }}>{p.title} {p.award && <span style={{ fontSize: 11, color: p.award.includes("1st") ? c.gold : c.accent2, display: "inline-flex", alignItems: "center", gap: 3 }}>{p.awardIcon && <p.awardIcon size={10} />} {p.award}</span>}</div><div style={{ fontSize: 11, color: c.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.subtitle}</div></div>
             </div>
             <p style={{ fontSize: 12, color: c.muted, lineHeight: 1.6, marginBottom: 14 }}>{p.desc}</p>
             <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(p.metrics.length, 3)},1fr)`, gap: 8, marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: p.color + "06", border: `1px solid ${p.color}10` }}>
-              {p.metrics.slice(0, 3).map((m) => (<div key={m.k} style={{ textAlign: "center" }}><Mono sx={{ fontSize: 14, fontWeight: 800, color: p.color }}>{m.v}</Mono><div style={{ fontSize: 9, color: c.muted, textTransform: "uppercase", letterSpacing: ".06em", marginTop: 2 }}>{m.k}</div></div>))}
+              {p.metrics.slice(0, 3).map((m) => (<div key={m.k} style={{ textAlign: "center" }}><Mono sx={{ fontSize: mob ? 12 : 14, fontWeight: 800, color: p.color }}>{m.v}</Mono><div style={{ fontSize: 9, color: c.muted, textTransform: "uppercase", letterSpacing: ".06em", marginTop: 2 }}>{m.k}</div></div>))}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", marginBottom: 12 }}>{p.tech.slice(0, 6).map((t) => <Tag key={t}>{t}</Tag>)}</div>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button onClick={() => go("project-detail", p.id)} style={{ fontSize: 12, color: c.accent, background: "none", border: "none", fontWeight: 600, cursor: "pointer", fontFamily: "monospace", padding: 0, display: "flex", alignItems: "center", gap: 4 }}>Details <ArrowRight size={11} /></button>
               {p.live && <a href={p.live} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: c.accent3, textDecoration: "none", fontWeight: 600, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4 }}>Live <ExternalLink size={11} /></a>}
             </div>
@@ -367,12 +397,13 @@ export default function Portfolio() {
   const Detail = () => {
     const p = PROJECTS.find((x) => x.id === pid);
     if (!p) return <div>Not found. <button onClick={() => go("projects")} style={{ color: c.accent, background: "none", border: "none", cursor: "pointer" }}>Back</button></div>;
+    const metricCols = mob ? Math.min(p.metrics.length, 2) : Math.min(p.metrics.length, 6);
     return (<>
       <button onClick={() => go("projects")} style={{ fontSize: 13, color: c.muted, background: "none", border: "none", cursor: "pointer", fontFamily: "monospace", marginBottom: 20, padding: 0, display: "flex", alignItems: "center", gap: 4 }}><ChevronLeft size={14} /> Back to Projects</button>
       <Card s="pd-h">
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-          <div style={{ width: 54, height: 54, borderRadius: 14, background: p.color + "14", border: `1px solid ${p.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}><p.Icon size={26} color={p.color} /></div>
-          <div><div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-.03em" }}>{p.title} {p.award && <span style={{ fontSize: 15, color: p.award.includes("1st") ? c.gold : c.accent2 }}>{p.award}</span>}</div><div style={{ fontSize: 15, color: c.muted }}>{p.subtitle}</div></div>
+        <div style={{ display: "flex", alignItems: mob ? "flex-start" : "center", gap: mob ? 10 : 14, marginBottom: 20, flexDirection: mob ? "column" : "row" }}>
+          <div style={{ width: mob ? 44 : 54, height: mob ? 44 : 54, borderRadius: 14, background: p.color + "14", border: `1px solid ${p.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><p.Icon size={mob ? 20 : 26} color={p.color} /></div>
+          <div><div style={{ fontSize: mob ? 20 : 26, fontWeight: 800, letterSpacing: "-.03em" }}>{p.title} {p.award && <span style={{ fontSize: mob ? 12 : 15, color: p.award.includes("1st") ? c.gold : c.accent2 }}>{p.award}</span>}</div><div style={{ fontSize: mob ? 13 : 15, color: c.muted }}>{p.subtitle}</div></div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <Btn href={p.github} primary><Github size={14} /> GitHub</Btn>
@@ -380,11 +411,11 @@ export default function Portfolio() {
           {p.team && <Mono sx={{ fontSize: 12, color: c.muted, display: "flex", alignItems: "center", gap: 4 }}><Users size={13} /> {p.team}</Mono>}
         </div>
       </Card>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(p.metrics.length, 6)},1fr)`, gap: 10, margin: "14px 0" }}>
-        {p.metrics.map((m, i) => (<Card key={m.k} s={`pd-m${i}`} delay={i * 40} sx={{ textAlign: "center", padding: 16 }}><Mono sx={{ fontSize: 22, fontWeight: 800, color: p.color }}>{m.v}</Mono><div style={{ fontSize: 10, color: c.muted, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>{m.k}</div></Card>))}
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${metricCols},1fr)`, gap: mob ? 8 : 10, margin: "14px 0" }}>
+        {p.metrics.map((m, i) => (<Card key={m.k} s={`pd-m${i}`} delay={i * 40} sx={{ textAlign: "center", padding: mob ? 12 : 16 }}><Mono sx={{ fontSize: mob ? 16 : 22, fontWeight: 800, color: p.color }}>{m.v}</Mono><div style={{ fontSize: mob ? 9 : 10, color: c.muted, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>{m.k}</div></Card>))}
       </div>
-      {p.arch && <Card s="pd-ar" delay={100} sx={{ margin: "14px 0" }}><div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}><Boxes size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Architecture</Mono></div><Mono sx={{ fontSize: 12, color: c.text, lineHeight: 1.7, display: "block" }}>{p.arch}</Mono></Card>}
-      <Card s="pd-dd" delay={150}><div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}><BookOpen size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Deep Dive</Mono></div>{p.longDesc.map((t, i) => <p key={i} style={{ fontSize: 14, lineHeight: 1.75, marginBottom: 14 }}>{t}</p>)}</Card>
+      {p.arch && <Card s="pd-ar" delay={100} sx={{ margin: "14px 0" }}><div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}><Boxes size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Architecture</Mono></div><Mono sx={{ fontSize: mob ? 11 : 12, color: c.text, lineHeight: 1.7, display: "block", wordBreak: "break-word" }}>{p.arch}</Mono></Card>}
+      <Card s="pd-dd" delay={150}><div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}><BookOpen size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Deep Dive</Mono></div>{p.longDesc.map((t, i) => <p key={i} style={{ fontSize: mob ? 13 : 14, lineHeight: 1.75, marginBottom: 14 }}>{t}</p>)}</Card>
       <Card s="pd-tc" delay={200} sx={{ marginTop: 14 }}><div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}><Layers size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Tech Stack</Mono></div><div style={{ display: "flex", flexWrap: "wrap" }}>{p.tech.map((t) => <Tag key={t}>{t}</Tag>)}</div></Card>
     </>);
   };
@@ -395,23 +426,23 @@ export default function Portfolio() {
     return (<>
       <Sec s="rs-t">Published <Grad>Research</Grad></Sec>
       <Card s="rs-p">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 13, background: c.accent2 + "14", display: "flex", alignItems: "center", justifyContent: "center" }}><BookOpen size={22} color={c.accent2} /></div>
+        <div style={{ display: "flex", alignItems: mob ? "flex-start" : "center", gap: 12, marginBottom: 20, flexDirection: mob ? "column" : "row" }}>
+          <div style={{ width: 48, height: 48, borderRadius: 13, background: c.accent2 + "14", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><BookOpen size={22} color={c.accent2} /></div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Trophy size={13} color={c.gold} /><Mono sx={{ fontSize: 10, color: c.accent2, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>1st Place &mdash; LSU Alexandria Research Symposium</Mono></div>
-            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>A Multi-Granularity Ensemble Learning Framework for Cryptocurrency Market Prediction and Algorithmic Trading</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Trophy size={13} color={c.gold} /><Mono sx={{ fontSize: 10, color: c.accent2, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>1st Place &mdash; LSU Alexandria Research Symposium</Mono></div>
+            <div style={{ fontSize: mob ? 15 : 18, fontWeight: 700, marginTop: 4 }}>A Multi-Granularity Ensemble Learning Framework for Cryptocurrency Market Prediction and Algorithmic Trading</div>
             <Mono sx={{ fontSize: 11, color: c.muted, marginTop: 4 }}>Solo Author &middot; Professor-Sponsored &middot; Mathematics & Computer Science</Mono>
           </div>
         </div>
-        {p.longDesc.map((t, i) => <p key={i} style={{ fontSize: 14, lineHeight: 1.75, marginBottom: 12 }}>{t}</p>)}
+        {p.longDesc.map((t, i) => <p key={i} style={{ fontSize: mob ? 13 : 14, lineHeight: 1.75, marginBottom: 12 }}>{t}</p>)}
       </Card>
       <Card s="rs-fc" delay={80} sx={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}><Activity size={14} color={c.accent2} /><Mono sx={{ fontSize: 10, color: c.accent2, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Multi-Granularity Forecasting (Walk-Forward)</Mono></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3,1fr)", gap: 12 }}>
           {[{ h: "1-Minute", mae: "18.37", rmse: "25.55", r2: "0.9984" }, { h: "5-Minute", mae: "41.10", rmse: "56.08", r2: "0.9921" }, { h: "15-Minute", mae: "76.00", rmse: "102.42", r2: "0.9733" }].map((r) => (
-            <div key={r.h} style={{ padding: 18, borderRadius: 12, background: c.accent2 + "06", border: `1px solid ${c.accent2}10`, textAlign: "center" }}>
+            <div key={r.h} style={{ padding: mob ? 14 : 18, borderRadius: 12, background: c.accent2 + "06", border: `1px solid ${c.accent2}10`, textAlign: "center" }}>
               <Mono sx={{ fontSize: 10, color: c.muted, textTransform: "uppercase", letterSpacing: ".1em" }}>{r.h}</Mono>
-              <div style={{ fontSize: 28, fontWeight: 800, color: c.accent2, fontFamily: "monospace", marginTop: 6 }}>{r.r2}</div>
+              <div style={{ fontSize: mob ? 22 : 28, fontWeight: 800, color: c.accent2, fontFamily: "monospace", marginTop: 6 }}>{r.r2}</div>
               <div style={{ fontSize: 10, color: c.muted, marginTop: 2 }}>R&sup2; Score</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 10 }}>
                 <div><Mono sx={{ fontSize: 13, fontWeight: 700 }}>{r.mae}</Mono><div style={{ fontSize: 9, color: c.muted }}>MAE</div></div>
@@ -423,9 +454,9 @@ export default function Portfolio() {
       </Card>
       <Card s="rs-bt" delay={160} sx={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}><Zap size={14} color={c.gold} /><Mono sx={{ fontSize: 10, color: c.gold, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Backtest (30 Days, 1-Hour Windows)</Mono></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mob ? "repeat(2,1fr)" : tab ? "repeat(3,1fr)" : "repeat(5,1fr)", gap: 10 }}>
           {[{ k: "Profit", v: "$1,117", co: c.gold }, { k: "Trades", v: "475", co: c.accent }, { k: "Win Rate", v: "85.47%", co: c.accent3 }, { k: "Sharpe", v: "3.21", co: c.accent2 }, { k: "Max DD", v: "$20.19", co: c.red }].map((m) => (
-            <div key={m.k} style={{ textAlign: "center", padding: 14, borderRadius: 10, background: m.co + "06", border: `1px solid ${m.co}10` }}><Mono sx={{ fontSize: 20, fontWeight: 800, color: m.co }}>{m.v}</Mono><div style={{ fontSize: 9, color: c.muted, textTransform: "uppercase", letterSpacing: ".06em", marginTop: 4 }}>{m.k}</div></div>
+            <div key={m.k} style={{ textAlign: "center", padding: mob ? 10 : 14, borderRadius: 10, background: m.co + "06", border: `1px solid ${m.co}10` }}><Mono sx={{ fontSize: mob ? 16 : 20, fontWeight: 800, color: m.co }}>{m.v}</Mono><div style={{ fontSize: 9, color: c.muted, textTransform: "uppercase", letterSpacing: ".06em", marginTop: 4 }}>{m.k}</div></div>
           ))}
         </div>
       </Card>
@@ -444,22 +475,22 @@ export default function Portfolio() {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {EXPERIENCE.map((e, i) => (
           <Card key={i} s={`ex-${i}`} delay={i * 60}>
-            <div style={{ display: "flex", gap: 16 }}>
+            <div style={{ display: "flex", gap: mob ? 10 : 16 }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 4 }}>
                 <div style={{ width: 12, height: 12, borderRadius: "50%", background: e.type === "v" ? c.accent : c.accent2, boxShadow: `0 0 10px ${e.type === "v" ? c.accent : c.accent2}35`, flexShrink: 0 }} />
                 {i < EXPERIENCE.length - 1 && <div style={{ width: 2, flex: 1, background: c.border, marginTop: 8 }} />}
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                  <span style={{ fontSize: 17, fontWeight: 700 }}>{e.role}</span>
+                  <span style={{ fontSize: mob ? 15 : 17, fontWeight: 700 }}>{e.role}</span>
                   <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: e.type === "v" ? c.accent + "10" : c.accent2 + "10", color: e.type === "v" ? c.accent : c.accent2, fontWeight: 600, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 3 }}>
                     {e.type === "v" ? <><Rocket size={10} /> Founder</> : <><Building2 size={10} /> Leadership</>}
                   </span>
                 </div>
                 <div style={{ fontSize: 14, color: c.accent, fontWeight: 600 }}>{e.org}</div>
-                <Mono sx={{ fontSize: 11, color: c.muted, marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><MapPin size={10} /> {e.period} &middot; {e.loc}</Mono>
+                <Mono sx={{ fontSize: 11, color: c.muted, marginTop: 3, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}><MapPin size={10} /> {e.period} &middot; {e.loc}</Mono>
                 <ul style={{ marginTop: 10, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {e.bullets.map((b, j) => <li key={j} style={{ fontSize: 13, color: c.muted, lineHeight: 1.6 }}>{b}</li>)}
+                  {e.bullets.map((b, j) => <li key={j} style={{ fontSize: mob ? 12 : 13, color: c.muted, lineHeight: 1.6 }}>{b}</li>)}
                 </ul>
               </div>
             </div>
@@ -481,7 +512,7 @@ export default function Portfolio() {
     };
     return (<>
       <Sec s="ct-t">Get in <Grad>Touch</Grad></Sec>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 14 }}>
         <Card s="ct-f">
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}><Send size={14} color={c.accent} /><Mono sx={{ fontSize: 10, color: c.accent, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase" }}>Send a Message</Mono></div>
           <Inp label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -499,15 +530,15 @@ export default function Portfolio() {
               { I: Phone, l: "Phone", v: "678-863-7789", h: "tel:6788637789" },
             ].map((l) => (
               <a key={l.l} href={l.h} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: c.card, border: `1px solid ${c.border}`, textDecoration: "none", color: c.text, transition: "all .2s", marginBottom: 8 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.accent + "30"; e.currentTarget.style.background = c.hov; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = c.card; }}>
+                onMouseEnter={(e) => { if (!mob) { e.currentTarget.style.borderColor = c.accent + "30"; e.currentTarget.style.background = c.hov; } }}
+                onMouseLeave={(e) => { if (!mob) { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.background = c.card; } }}>
                 <l.I size={16} color={c.accent} />
-                <div><Mono sx={{ fontSize: 9, color: c.muted, letterSpacing: ".08em", textTransform: "uppercase" }}>{l.l}</Mono><div style={{ fontSize: 13, fontWeight: 600, color: c.accent }}>{l.v}</div></div>
+                <div style={{ minWidth: 0 }}><Mono sx={{ fontSize: 9, color: c.muted, letterSpacing: ".08em", textTransform: "uppercase" }}>{l.l}</Mono><div style={{ fontSize: 13, fontWeight: 600, color: c.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.v}</div></div>
               </a>
             ))}
           </Card>
           <Card s="ct-r" delay={160}>
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ textAlign: "center", padding: mob ? "14px 0" : "20px 0" }}>
               <div style={{ margin: "0 auto 10px", display: "flex", justifyContent: "center" }}><FileText size={40} color={c.accent} style={{ animation: "float 3s ease-in-out infinite" }} /></div>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Resume</div>
               <Btn primary><Download size={14} /> Download PDF</Btn>
@@ -529,10 +560,12 @@ export default function Portfolio() {
         @keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:${c.muted}25;border-radius:99px}
         ::selection{background:${c.accent}25;color:${c.accent}}
+        *{-webkit-tap-highlight-color:transparent}
+        input,textarea,button{font-size:16px}
       `}</style>
-      <div style={{ position: "fixed", width: 650, height: 650, borderRadius: "50%", background: `radial-gradient(circle,${c.glow} 0%,transparent 70%)`, left: mouse.x - 325, top: mouse.y - 325, pointerEvents: "none", zIndex: 0, transition: "left .06s linear,top .06s linear" }} />
+      {!mob && <div style={{ position: "fixed", width: 650, height: 650, borderRadius: "50%", background: `radial-gradient(circle,${c.glow} 0%,transparent 70%)`, left: mouse.x - 325, top: mouse.y - 325, pointerEvents: "none", zIndex: 0, transition: "left .06s linear,top .06s linear" }} />}
       <Nav />
-      <main style={{ maxWidth: 1120, margin: "0 auto", padding: "36px 20px", position: "relative", zIndex: 1 }}><P /></main>
+      <main style={{ maxWidth: 1120, margin: "0 auto", padding: mob ? "20px 14px" : "36px 20px", position: "relative", zIndex: 1 }}><P /></main>
       <Footer />
     </div>
   );
