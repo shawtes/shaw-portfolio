@@ -37,3 +37,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+public/models/character.glb
+public/models/xbot.glb
+public/models/cesiumman.glb
