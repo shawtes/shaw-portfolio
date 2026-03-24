@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, ReactNode } from 'react';
 import { PROJECTS } from '../data/projects';
 import { EXPERIENCE } from '../data/experience';
 import { SKILLS, AWARDS } from '../data/skills';
+import VerticalThreadLine from './ui/VerticalThreadLine';
+import ParticlePortrait from './ParticlePortrait';
 
 /*
   PORTFOLIO — Lusion-style
@@ -40,6 +42,88 @@ function Rv({ children, delay = 0, direction = 'up' }: { children: ReactNode; de
     }}>
       {children}
     </div>
+  );
+}
+
+// ═══════════ TEXT REVEAL — word by word stagger ═══════════
+function TextReveal({ text, style = {}, wordDelay = 0.04 }: { text: string; style?: React.CSSProperties; wordDelay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVis(true); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  const words = text.split(' ');
+  return (
+    <div ref={ref} style={{ overflow: 'hidden', ...style }}>
+      {words.map((word, i) => (
+        <span key={i} style={{
+          display: 'inline-block',
+          opacity: vis ? 1 : 0,
+          transform: vis ? 'translateY(0)' : 'translateY(100%)',
+          transition: `opacity .6s cubic-bezier(.16,1,.3,1) ${i * wordDelay}s, transform .6s cubic-bezier(.16,1,.3,1) ${i * wordDelay}s`,
+          marginRight: '0.3em',
+        }}>
+          {word}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════ CHAR SPLIT — character by character reveal for big headlines ═══════════
+function CharSplit({ text, style = {}, charDelay = 0.025, visible = true }: {
+  text: string; style?: React.CSSProperties; charDelay?: number; visible?: boolean;
+}) {
+  return (
+    <span style={style}>
+      {text.split('').map((char, i) => (
+        <span key={i} style={{
+          display: 'inline-block',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0) rotateX(0)' : 'translateY(60%) rotateX(-40deg)',
+          transition: `opacity .5s cubic-bezier(.16,1,.3,1) ${i * charDelay}s, transform .7s cubic-bezier(.16,1,.3,1) ${i * charDelay}s`,
+          transformOrigin: 'bottom',
+          whiteSpace: char === ' ' ? 'pre' : undefined,
+        }}>
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// ═══════════ HERO TEXT — uses CharSplit with scroll trigger ═══════════
+function HeroTitle({ line1, line2 }: { line1: string; line2: string }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVis(true); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <h1 ref={ref} style={{
+      fontFamily: 'var(--font)',
+      fontSize: 'clamp(48px, 10vw, 140px)',
+      fontWeight: 900,
+      lineHeight: 0.92,
+      letterSpacing: '-0.04em',
+      color: '#f0f1fa',
+      marginBottom: 40,
+    }}>
+      <span style={{ display: 'block' }}>
+        <CharSplit text={line1} visible={vis} charDelay={0.03} />
+      </span>
+      <span style={{ display: 'block', color: '#c1ff00' }}>
+        <CharSplit text={line2} visible={vis} charDelay={0.03} style={{ transitionDelay: '0.3s' }} />
+      </span>
+    </h1>
   );
 }
 
@@ -154,8 +238,28 @@ function ProjectRow({ project, index }: { project: typeof PROJECTS[0]; index: nu
   );
 }
 
+// ═══════════ RESPONSIVE HOOK ═══════════
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    setMatches(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [query]);
+  return matches;
+}
+
 // ═══════════ MAIN PORTFOLIO ═══════════
 export default function Portfolio() {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   return (
     <div style={{
       '--font': "'Inter Tight', 'Helvetica Neue', sans-serif",
@@ -164,10 +268,45 @@ export default function Portfolio() {
       color: '#f0f1fa',
       minHeight: '100vh',
       overflowX: 'hidden',
+      position: 'relative',
     } as React.CSSProperties}>
       <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
 
-      {/* ═══ HERO — massive text, minimal ═══ */}
+      {/* ═══ FIXED PARTICLE PORTRAIT — stays centered, content scrolls over ═══ */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 0,
+        pointerEvents: 'none',
+        transform: `translateY(${scrollY * -0.05}px)`,
+        willChange: 'transform',
+      }}>
+        <ParticlePortrait
+          src="/portrait.png"
+          width={isMobile ? 380 : 600}
+          height={isMobile ? 440 : 700}
+          particleCount={isMobile ? 2000 : 4000}
+          maxLineLength={isMobile ? 16 : 20}
+          pointColor={[180, 180, 195]}
+          lineColor={[120, 120, 140]}
+          accentColor={[193, 255, 0]}
+          style={{ pointerEvents: 'auto' }}
+        />
+      </div>
+
+      {/* ═══ SCROLLABLE CONTENT — sits above the fixed portrait ═══ */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+
+      {/* ═══ NEON THREAD LINE — draws across the full page as you scroll ═══ */}
+      <VerticalThreadLine color="#c1ff00" opacity={0.45} strokeWidth={9} />
+
+      {/* ═══ HERO — massive text, portrait visible behind ═══ */}
       <section style={{
         minHeight: '100vh',
         display: 'flex',
@@ -176,57 +315,53 @@ export default function Portfolio() {
         padding: 'max(5vw, 40px)',
         maxWidth: 1400,
         margin: '0 auto',
+        position: 'relative',
       }}>
-        <Rv>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#555', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 32 }}>
-            Software Engineer · ML Systems
-          </div>
-        </Rv>
-        <Rv delay={0.1}>
-          <h1 style={{
-            fontFamily: 'var(--font)',
-            fontSize: 'clamp(48px, 10vw, 140px)',
-            fontWeight: 900,
-            lineHeight: 0.92,
-            letterSpacing: '-0.04em',
-            color: '#f0f1fa',
-            marginBottom: 40,
-          }}>
-            Shaw<br />Tesfaye
-          </h1>
-        </Rv>
-        <Rv delay={0.2}>
-          <p style={{
-            fontFamily: 'var(--font)',
-            fontSize: 'clamp(14px, 1.5vw, 18px)',
-            fontWeight: 300,
-            color: '#666',
-            maxWidth: 520,
-            lineHeight: 1.7,
-          }}>
-            Building ML-driven systems, full-stack applications, and quantitative frameworks.
-            Senior CS at Georgia State University, graduating December 2026.
-          </p>
-        </Rv>
-        <Rv delay={0.3}>
-          <div style={{ marginTop: 40, display: 'flex', gap: 16, alignItems: 'center' }}>
-            <a href="#work" style={{
-              fontFamily: 'var(--mono)', fontSize: 12, color: '#050507', background: '#c1ff00',
-              padding: '14px 28px', borderRadius: 100, textDecoration: 'none', fontWeight: 500,
-              transition: 'transform .2s', display: 'inline-block',
-            }}>
-              View work ↓
-            </a>
-            <a href="https://github.com/shawtes" target="_blank" rel="noopener noreferrer" style={{
-              fontFamily: 'var(--mono)', fontSize: 12, color: '#888',
-              padding: '14px 28px', borderRadius: 100, textDecoration: 'none',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}>
-              GitHub ↗
-            </a>
-          </div>
-        </Rv>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <Rv>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#555', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 32 }}>
+              Software Engineer · ML Systems
+            </div>
+          </Rv>
+          <HeroTitle line1="Shaw" line2="Tesfaye." />
+          <TextReveal
+            text="Building ML-driven systems, full-stack applications, and quantitative frameworks. Senior CS at Georgia State University, graduating December 2026."
+            style={{
+              fontFamily: 'var(--font)',
+              fontSize: 'clamp(14px, 1.5vw, 18px)',
+              fontWeight: 300,
+              color: '#666',
+              maxWidth: 520,
+              lineHeight: 1.7,
+            }}
+          />
+          <Rv delay={0.3}>
+            <div style={{ marginTop: 40, display: 'flex', gap: 16, alignItems: 'center' }}>
+              <a href="#work" style={{
+                fontFamily: 'var(--mono)', fontSize: 12, color: '#050507', background: '#c1ff00',
+                padding: '14px 28px', borderRadius: 100, textDecoration: 'none', fontWeight: 500,
+                transition: 'transform .2s', display: 'inline-block',
+              }}>
+                View work ↓
+              </a>
+              <a href="https://github.com/shawtes" target="_blank" rel="noopener noreferrer" style={{
+                fontFamily: 'var(--mono)', fontSize: 12, color: '#888',
+                padding: '14px 28px', borderRadius: 100, textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.1)',
+              }}>
+                GitHub ↗
+              </a>
+            </div>
+          </Rv>
+        </div>
       </section>
+
+      {/* ═══ FROSTED CONTENT — semi-transparent, portrait visible through ═══ */}
+      <div style={{
+        background: 'rgba(5, 5, 7, 0.6)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      } as React.CSSProperties}>
 
       {/* ═══ STATS BAR — counters ═══ */}
       <section style={{
@@ -234,7 +369,7 @@ export default function Portfolio() {
         borderTop: '1px solid rgba(255,255,255,0.04)',
         borderBottom: '1px solid rgba(255,255,255,0.04)',
       }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2vw' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '2vw' }}>
           <Counter value="4" label="Hackathon Wins" />
           <Counter value="8" label="Projects Shipped" />
           <Counter value="2" label="Research Papers" />
@@ -242,21 +377,21 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* ═══ FEATURED WORK — huge project names ═══ */}
+{/* ═══ FEATURED WORK — huge project names ═══ */}
       <section id="work" style={{ padding: '100px max(5vw, 40px)', maxWidth: 1400, margin: '0 auto' }}>
         <Rv>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#555', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 16 }}>
             Featured Work
           </div>
         </Rv>
-        <Rv delay={0.05}>
-          <h2 style={{
+        <TextReveal
+          text="A selection of passionately crafted works"
+          style={{
             fontFamily: 'var(--font)', fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 800,
-            color: '#f0f1fa', letterSpacing: '-0.03em', marginBottom: 60, lineHeight: 1.05,
-          }}>
-            A selection of passionately<br />crafted works
-          </h2>
-        </Rv>
+            color: '#f0f1fa', letterSpacing: '-0.03em', marginBottom: 60, lineHeight: 1.15,
+          }}
+          wordDelay={0.05}
+        />
 
         {/* Project list */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -266,29 +401,28 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* ═══ ABOUT — two column, big statement ═══ */}
+{/* ═══ ABOUT — two column, big statement ═══ */}
       <section style={{
         padding: '120px max(5vw, 40px)',
         maxWidth: 1400,
         margin: '0 auto',
         borderTop: '1px solid rgba(255,255,255,0.04)',
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 'clamp(40px, 6vw, 100px)', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: 'clamp(40px, 6vw, 100px)', alignItems: 'start' }}>
           <div>
             <Rv>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#555', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 24 }}>
                 About
               </div>
             </Rv>
-            <Rv delay={0.1}>
-              <h2 style={{
+            <TextReveal
+              text="Connecting ideas to uniquely crafted experiences"
+              style={{
                 fontFamily: 'var(--font)', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800,
-                color: '#f0f1fa', letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 32,
-              }}>
-                Connecting ideas to<br />uniquely crafted<br />
-                <span style={{ color: '#c1ff00' }}>experiences</span>
-              </h2>
-            </Rv>
+                color: '#f0f1fa', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 32,
+              }}
+              wordDelay={0.05}
+            />
             <Rv delay={0.15}>
               <p style={{ fontFamily: 'var(--font)', fontSize: 15, fontWeight: 300, color: '#666', lineHeight: 1.85, marginBottom: 20 }}>
                 I&apos;m Shaw Tesfaye, a software engineer and ML researcher at Georgia State University.
@@ -330,7 +464,7 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* ═══ EXPERIENCE — timeline ═══ */}
+{/* ═══ EXPERIENCE — timeline ═══ */}
       <section style={{
         padding: '100px max(5vw, 40px)',
         maxWidth: 1400,
@@ -351,7 +485,7 @@ export default function Portfolio() {
           </h2>
         </Rv>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(40px, 4vw, 80px)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 'clamp(40px, 4vw, 80px)' }}>
           {/* Timeline */}
           <div>
             {EXPERIENCE.map((exp, i) => (
@@ -388,7 +522,7 @@ export default function Portfolio() {
               {AWARDS.map((a, i) => (
                 <Rv key={i} delay={i * 0.08}>
                   <div style={{
-                    background: '#0a0a0f',
+                    background: 'rgba(10, 10, 15, 0.85)',
                     border: '1px solid rgba(255,255,255,0.06)',
                     borderRadius: 20,
                     padding: 24,
@@ -407,7 +541,7 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* ═══ CONTACT — big CTA ═══ */}
+{/* ═══ CONTACT — big CTA ═══ */}
       <section id="contact" style={{
         padding: '120px max(5vw, 40px)',
         maxWidth: 1400,
@@ -419,19 +553,18 @@ export default function Portfolio() {
             Get in touch
           </div>
         </Rv>
-        <Rv delay={0.1}>
-          <h2 style={{
+        <TextReveal
+          text="Is your big idea ready to go wild?"
+          style={{
             fontFamily: 'var(--font)',
             fontSize: 'clamp(40px, 8vw, 100px)',
             fontWeight: 900,
             letterSpacing: '-0.04em',
-            lineHeight: 0.95,
+            lineHeight: 1.05,
             marginBottom: 48,
-          }}>
-            Is your big idea<br />ready to go{' '}
-            <span style={{ color: '#c1ff00' }}>wild?</span>
-          </h2>
-        </Rv>
+          }}
+          wordDelay={0.06}
+        />
         <Rv delay={0.15}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <a href="mailto:stesfaye4@student.gsu.edu" style={{
@@ -471,6 +604,9 @@ export default function Portfolio() {
         <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#333' }}>© 2026 Shaw Tesfaye</span>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#333' }}>Atlanta, GA</span>
       </footer>
+
+      </div>{/* end opaque content wrapper */}
+      </div>{/* end scrollable content wrapper */}
     </div>
   );
 }

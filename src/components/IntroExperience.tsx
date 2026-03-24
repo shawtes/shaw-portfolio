@@ -35,18 +35,20 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
     }
 
     if (p < 0.18) {
-      // Seated at desk — lower position, slight forward lean
-      group.current.position.set(0, 0.42, 0.38);
+      // Seated at desk, facing monitor (-Z direction)
+      // Chair seat at y=0.42, z=0.4. Character origin is at feet,
+      // so y=0.42 puts feet on chair seat. Scale 0.4 → ~0.72 units tall.
+      group.current.position.set(0, 0.42, 0.4);
       group.current.position.y += Math.sin(t * 1.8) * 0.002;
-      group.current.rotation.set(0.15, Math.PI, 0); // slight forward lean
-      group.current.scale.setScalar(0.45);
+      group.current.rotation.set(0, Math.PI, 0); // face monitor (-Z)
+      group.current.scale.setScalar(0.4);
     } else if (p < 0.32) {
       // Getting pulled from chair toward monitor
       const pull = (p - 0.18) / 0.14;
       const ease = pull * pull * pull;
-      group.current.position.set(0, 0.42 + ease * 0.3, 0.38 - ease * 0.7);
-      group.current.rotation.set(0.15 - ease * 0.85, Math.PI, 0);
-      group.current.scale.setScalar(0.45 * (1 - ease * 0.4));
+      group.current.position.set(0, 0.42 + ease * 0.3, 0.4 - ease * 0.8);
+      group.current.rotation.set(-ease * 0.7, Math.PI, 0);
+      group.current.scale.setScalar(0.4 * (1 - ease * 0.4));
     } else if (p < 0.85) {
       // INSIDE COMPUTER: Shaw travels into -Z through the grid
       // Guide wire: x=0, y=0, z goes from 0.5 to -5 (through many cells)
