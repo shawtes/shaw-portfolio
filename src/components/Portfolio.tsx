@@ -300,7 +300,7 @@ export default function Portfolio() {
       <div style={{ position: 'relative', zIndex: 1 }}>
 
       {/* ═══ NEON THREAD LINE — draws across the full page as you scroll ═══ */}
-      <VerticalThreadLine color="#c1ff00" opacity={0.45} strokeWidth={9} />
+      <VerticalThreadLine color="#c1ff00" opacity={0.45} strokeWidth={11.7} />
 
       {/* ═══ HERO — massive text, portrait visible behind ═══ */}
       <section style={{
