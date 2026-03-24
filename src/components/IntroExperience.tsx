@@ -35,20 +35,20 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
     }
 
     if (p < 0.18) {
-      // Seated at desk, facing monitor (-Z direction)
-      // Chair seat at y=0.42, z=0.4. Character origin is at feet,
-      // so y=0.42 puts feet on chair seat. Scale 0.4 → ~0.72 units tall.
-      group.current.position.set(0, 0.42, 0.4);
-      group.current.position.y += Math.sin(t * 1.8) * 0.002;
+      // Standing in front of desk, facing monitor (-Z direction)
+      // Life-sized: scale 0.9 → ~1.6 units tall (soldier.glb is ~180 native units)
+      // Position: feet on ground (y=0), standing behind desk (z=0.6)
+      group.current.position.set(0, 0, 0.6);
+      group.current.position.y += Math.sin(t * 1.2) * 0.003; // subtle breathing
       group.current.rotation.set(0, Math.PI, 0); // face monitor (-Z)
-      group.current.scale.setScalar(0.4);
+      group.current.scale.setScalar(0.9);
     } else if (p < 0.32) {
-      // Getting pulled from chair toward monitor
+      // Getting pulled from standing position toward monitor
       const pull = (p - 0.18) / 0.14;
       const ease = pull * pull * pull;
-      group.current.position.set(0, 0.42 + ease * 0.3, 0.4 - ease * 0.8);
-      group.current.rotation.set(-ease * 0.7, Math.PI, 0);
-      group.current.scale.setScalar(0.4 * (1 - ease * 0.4));
+      group.current.position.set(0, ease * 0.5, 0.6 - ease * 1.2);
+      group.current.rotation.set(-ease * 0.8, Math.PI, 0);
+      group.current.scale.setScalar(0.9 * (1 - ease * 0.5));
     } else if (p < 0.85) {
       // INSIDE COMPUTER: Shaw travels into -Z through the grid
       // Guide wire: x=0, y=0, z goes from 0.5 to -5 (through many cells)
@@ -137,9 +137,6 @@ function Room({ pullProgress }: { pullProgress: number }) {
       {/* Monitor stand */}
       <mesh position={[0,0.82,-0.33]}><boxGeometry args={[0.05,0.18,0.04]} /><meshStandardMaterial color="#080808" metalness={0.5} /></mesh>
       <mesh position={[0,0.73,-0.33]}><boxGeometry args={[0.22,0.015,0.1]} /><meshStandardMaterial color="#080808" metalness={0.5} /></mesh>
-      {/* Chair */}
-      <mesh position={[0,0.42,0.4]}><boxGeometry args={[0.42,0.035,0.38]} /><meshStandardMaterial color="#1a1a2e" /></mesh>
-      <mesh position={[0,0.68,0.58]} rotation={[0.08,0,0]}><boxGeometry args={[0.4,0.45,0.03]} /><meshStandardMaterial color="#1a1a2e" /></mesh>
       {/* Floor — slightly reflective */}
       <mesh position={[0,0,0]} rotation={[-Math.PI/2,0,0]}>
         <planeGeometry args={[14,14]} />
@@ -180,16 +177,16 @@ function Scene({ progress, onComplete }: { progress: number; onComplete: () => v
     const p = progress;
 
     if (p < 0.18) {
-      // === DESK: wide shot ===
-      shawPos.current.set(0, 0.7, 0.2);
-      targetPos.current.set(1.2, 1.5, 2.5);
-      targetLook.current.set(0, 0.9, -0.1);
+      // === DESK: wide shot of standing character ===
+      shawPos.current.set(0, 0.8, 0.6);
+      targetPos.current.set(1.5, 1.2, 3.2);
+      targetLook.current.set(0, 0.8, 0);
     } else if (p < 0.32) {
       // === PULL: camera follows Shaw toward monitor ===
       const t = (p - 0.18) / 0.14;
-      shawPos.current.set(0, 0.7 + t * 0.1, 0.2 - t * 0.6);
-      targetPos.current.set(1.2 - t * 1.0, 1.5 - t * 0.3, 2.5 - t * 2.3);
-      targetLook.current.set(0, 0.85, -0.3 - t * 0.7);
+      shawPos.current.set(0, 0.8 + t * 0.2, 0.6 - t * 1.0);
+      targetPos.current.set(1.5 - t * 1.3, 1.2 - t * 0.1, 3.2 - t * 2.8);
+      targetLook.current.set(0, 0.8, -0.2 - t * 0.8);
     } else if (p < 0.85) {
       // === INSIDE COMPUTER ===
       // Must match Shaw character: z goes from 1 to -12, y=-0.3

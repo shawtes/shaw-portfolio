@@ -32,26 +32,6 @@ export default function DeskSetup({ position = [0, 0, 0] as [number, number, num
       </mesh>
       {/* Monitor */}
       <MonitorScreen position={[0, 1.15, -0.2]} />
-      {/* Chair */}
-      <group position={[0, 0, 0.55]}>
-        {/* Seat */}
-        <mesh position={[0, 0.45, 0]}>
-          <boxGeometry args={[0.45, 0.04, 0.4]} />
-          <meshStandardMaterial color="#1a1a2e" flatShading />
-        </mesh>
-        {/* Back */}
-        <mesh position={[0, 0.72, 0.18]} rotation={[0.1, 0, 0]}>
-          <boxGeometry args={[0.43, 0.5, 0.04]} />
-          <meshStandardMaterial color="#1a1a2e" flatShading />
-        </mesh>
-        {/* Chair Legs */}
-        {[[-0.18, 0.22, -0.15], [0.18, 0.22, -0.15], [-0.18, 0.22, 0.15], [0.18, 0.22, 0.15]].map((pos, i) => (
-          <mesh key={i} position={pos as [number, number, number]}>
-            <cylinderGeometry args={[0.015, 0.015, 0.44, 4]} />
-            <meshStandardMaterial color="#333" flatShading />
-          </mesh>
-        ))}
-      </group>
     </group>
   );
 }
