@@ -288,8 +288,8 @@ export default function Portfolio() {
         willChange: 'transform',
       }}>
         <StipplePortrait
-          width={isMobile ? 380 : 600}
-          height={isMobile ? 440 : 700}
+          width={isMobile ? 247 : 390}
+          height={isMobile ? 286 : 455}
           accentColor={[193, 255, 0]}
           style={{ pointerEvents: 'auto' }}
         />
