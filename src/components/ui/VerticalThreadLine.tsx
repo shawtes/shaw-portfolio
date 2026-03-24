@@ -2,57 +2,86 @@
 
 /**
  * VerticalThreadLine — neon ribbon that draws as you scroll.
- * Uses getBoundingClientRect for reliable scroll tracking.
- * Lerp-based smooth animation.
+ * Starts from the left wall near the hero buttons.
+ * Loops off-screen and returns with variable-speed drawing.
  */
 
 import { useRef, useEffect, useState } from 'react';
 
-const LERP = 0.088;
+const BASE_LERP = 0.088;
 
 function buildPath(vH: number): string {
   if (vH < 100) return '';
-  const s = vH / 10;
+  const s = vH / 12;
   return [
-    // Start top-right, sweep left
-    `M 620 0`,
-    `C 620 ${s * 0.3}, 120 ${s * 0.6}, 80 ${s * 1.0}`,
+    // Start from left wall, below hero (~85% down first viewport)
+    `M -20 ${s * 0.85}`,
 
-    // Loop #1 — spirals off the left edge and comes back
-    `C 30 ${s * 1.2}, -60 ${s * 1.1}, -40 ${s * 1.4}`,
-    `C -20 ${s * 1.7}, 50 ${s * 1.9}, 120 ${s * 1.8}`,
-    `C 200 ${s * 1.7}, 160 ${s * 2.0}, 140 ${s * 2.2}`,
+    // Gentle curve entering from left, sweeping right
+    `Q 60 ${s * 0.9}, 150 ${s * 1.1}`,
+    `C 280 ${s * 1.3}, 500 ${s * 1.2}, 600 ${s * 1.5}`,
 
-    // Sweep right across the page
-    `C 120 ${s * 2.4}, 500 ${s * 2.5}, 580 ${s * 2.8}`,
+    // Smooth sweep further right
+    `C 700 ${s * 1.8}, 800 ${s * 2.0}, 750 ${s * 2.3}`,
 
-    // Loop #2 — goes off right edge, circles back
-    `C 660 ${s * 3.0}, 1080 ${s * 2.9}, 1060 ${s * 3.2}`,
-    `C 1040 ${s * 3.5}, 960 ${s * 3.3}, 900 ${s * 3.5}`,
-    `C 840 ${s * 3.7}, 920 ${s * 3.9}, 860 ${s * 4.0}`,
+    // Loop #1 — off right edge, smooth circle back
+    `C 700 ${s * 2.5}, 1080 ${s * 2.4}, 1100 ${s * 2.7}`,
+    `C 1120 ${s * 3.0}, 1040 ${s * 3.2}, 920 ${s * 3.1}`,
+    `C 800 ${s * 3.0}, 780 ${s * 3.3}, 700 ${s * 3.4}`,
 
-    // Drift back left with a gentle S-curve
-    `C 800 ${s * 4.1}, 400 ${s * 4.3}, 300 ${s * 4.5}`,
+    // Drift left with lazy S-curve
+    `C 600 ${s * 3.6}, 350 ${s * 3.7}, 200 ${s * 4.0}`,
+    `C 100 ${s * 4.2}, 60 ${s * 4.4}, 40 ${s * 4.6}`,
 
-    // Loop #3 — tight curl mid-page
-    `C 200 ${s * 4.7}, 140 ${s * 4.6}, 180 ${s * 4.4}`,
-    `C 220 ${s * 4.2}, 320 ${s * 4.3}, 340 ${s * 4.6}`,
-    `C 360 ${s * 4.9}, 200 ${s * 5.1}, 160 ${s * 5.3}`,
+    // Loop #2 — off left edge, smooth return
+    `C 20 ${s * 4.8}, -80 ${s * 4.7}, -100 ${s * 5.0}`,
+    `C -120 ${s * 5.3}, -60 ${s * 5.5}, 40 ${s * 5.4}`,
+    `C 140 ${s * 5.3}, 180 ${s * 5.5}, 220 ${s * 5.7}`,
 
-    // Sweep right again
-    `C 120 ${s * 5.5}, 500 ${s * 5.6}, 600 ${s * 5.9}`,
+    // Sweep right across mid-page
+    `C 300 ${s * 5.9}, 550 ${s * 6.0}, 680 ${s * 6.3}`,
 
-    // Loop #4 — dips off right edge, lazy return
-    `C 700 ${s * 6.2}, 1100 ${s * 6.1}, 1060 ${s * 6.5}`,
-    `C 1020 ${s * 6.9}, 800 ${s * 7.0}, 700 ${s * 7.2}`,
+    // Loop #3 — tight mid-page curl
+    `C 750 ${s * 6.5}, 780 ${s * 6.3}, 740 ${s * 6.1}`,
+    `C 700 ${s * 5.9}, 640 ${s * 6.1}, 660 ${s * 6.4}`,
+    `C 680 ${s * 6.7}, 750 ${s * 6.8}, 800 ${s * 7.0}`,
 
-    // Meander left
-    `C 600 ${s * 7.4}, 200 ${s * 7.6}, 120 ${s * 7.9}`,
+    // Sweep right and off edge
+    `C 860 ${s * 7.2}, 950 ${s * 7.3}, 1000 ${s * 7.5}`,
 
-    // Final sweep to center-right
-    `C 40 ${s * 8.2}, 400 ${s * 8.5}, 500 ${s * 8.8}`,
-    `C 560 ${s * 9.0}, 520 ${s * 9.4}, 480 ${vH}`,
+    // Loop #4 — off right edge, big lazy arc back
+    `C 1060 ${s * 7.7}, 1120 ${s * 7.9}, 1100 ${s * 8.2}`,
+    `C 1080 ${s * 8.5}, 980 ${s * 8.6}, 850 ${s * 8.7}`,
+
+    // Final meander left
+    `C 700 ${s * 8.9}, 400 ${s * 9.1}, 250 ${s * 9.4}`,
+    `C 150 ${s * 9.6}, 80 ${s * 9.8}, 60 ${s * 10.0}`,
+
+    // Trail off bottom-left
+    `C 40 ${s * 10.3}, 100 ${s * 10.8}, 200 ${s * 11.2}`,
+    `Q 300 ${s * 11.6}, 400 ${vH}`,
   ].join(' ');
+}
+
+// Define which progress ranges are "loop" zones where the line speeds up
+// Each loop zone gets faster lerp
+const LOOP_ZONES: [number, number][] = [
+  [0.18, 0.28],   // Loop #1
+  [0.38, 0.48],   // Loop #2
+  [0.52, 0.60],   // Loop #3
+  [0.64, 0.74],   // Loop #4
+];
+
+function getLerpForProgress(progress: number): number {
+  for (const [start, end] of LOOP_ZONES) {
+    if (progress >= start && progress <= end) {
+      // Ramp up in the loop zone — 2.5x faster at the peak
+      const mid = (start + end) / 2;
+      const dist = 1 - Math.abs(progress - mid) / ((end - start) / 2);
+      return BASE_LERP + dist * BASE_LERP * 1.5;
+    }
+  }
+  return BASE_LERP;
 }
 
 interface Props {
@@ -82,7 +111,6 @@ export default function VerticalThreadLine({
     if (!parent) return;
     const measure = () => setSize({ w: parent.offsetWidth, h: parent.scrollHeight });
     measure();
-    // Re-measure after fonts/content loads
     const timer = setTimeout(measure, 500);
     const ro = new ResizeObserver(measure);
     ro.observe(parent);
@@ -110,7 +138,7 @@ export default function VerticalThreadLine({
     return () => cancelAnimationFrame(id);
   }, [size]);
 
-  // Continuous lerp loop — updates both core + glow paths
+  // Continuous lerp loop — variable speed based on position
   useEffect(() => {
     const loop = () => {
       rafIdRef.current = requestAnimationFrame(loop);
@@ -118,7 +146,8 @@ export default function VerticalThreadLine({
       if (Math.abs(diff) < 0.0001) {
         currentRef.current = targetRef.current;
       } else {
-        currentRef.current += diff * LERP;
+        const lerp = getLerpForProgress(currentRef.current);
+        currentRef.current += diff * lerp;
       }
       const len = lenRef.current;
       if (len) {
@@ -131,7 +160,7 @@ export default function VerticalThreadLine({
     return () => { if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current); };
   }, []);
 
-  // Scroll → target progress using getBoundingClientRect (reliable)
+  // Scroll → target progress
   useEffect(() => {
     const update = () => {
       const parent = wrapRef.current?.parentElement;
@@ -139,7 +168,6 @@ export default function VerticalThreadLine({
       const rect = parent.getBoundingClientRect();
       const vh = window.innerHeight;
       const totalH = parent.scrollHeight;
-      // How far the top of the container has scrolled past the viewport top
       const scrolled = -rect.top;
       const scrollable = totalH - vh;
       if (scrollable <= 0) return;
@@ -147,11 +175,8 @@ export default function VerticalThreadLine({
       targetRef.current = Math.min(1, Math.max(0, raw));
     };
     window.addEventListener('scroll', update, { passive: true });
-    // Also update on resize
     window.addEventListener('resize', update, { passive: true });
-    // Initial
     update();
-    // Update after a delay too (content may shift)
     const timer = setTimeout(update, 1000);
     return () => {
       window.removeEventListener('scroll', update);
@@ -167,7 +192,7 @@ export default function VerticalThreadLine({
   return (
     <div
       ref={wrapRef}
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}
     >
       <svg
         viewBox={`0 0 1000 ${size.h}`}
@@ -176,7 +201,7 @@ export default function VerticalThreadLine({
         height={size.h}
         style={{ display: 'block', overflow: 'visible' }}
       >
-        {/* Glow layer — wider, more transparent, no filter for perf */}
+        {/* Glow layer */}
         <path
           ref={glowRef}
           d={pathD}
