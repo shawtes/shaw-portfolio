@@ -8,53 +8,40 @@
 
 import { useRef, useEffect, useState } from 'react';
 
-const BASE_LERP = 0.088;
+const LERP = 0.06;
 
 function buildPath(vH: number): string {
   if (vH < 100) return '';
-  const s = vH / 12;
-  // y positions for clean half-circle arcs
-  // Start below hero buttons (~95% of first viewport)
-  const y0 = s * 1.15;
+  // The line flows gently through the page like a lazy river.
+  // Wide, graceful curves — never sharp, never zig-zaggy.
+  // Each arc spans a huge vertical distance so it feels spacious.
+  const h = vH;
   return [
-    // Enter from left wall, below "View work" buttons
-    `M -20 ${y0}`,
+    // Enter from left wall, well below the hero buttons
+    `M -30 ${h * 0.12}`,
 
-    // Half-circle arc #1 — sweeps right (open right semi-oval)
-    `C -20 ${y0 + s * 1.6}, 1020 ${y0 + s * 1.6}, 1020 ${y0 + s * 3.2}`,
+    // Long gentle arc drifting to the right — very wide radius
+    `C 200 ${h * 0.14}, 700 ${h * 0.20}, 820 ${h * 0.30}`,
 
-    // Half-circle arc #2 — sweeps back left (open left semi-oval, goes off-screen left)
-    `C 1020 ${y0 + s * 4.6}, -80 ${y0 + s * 4.6}, -80 ${y0 + s * 5.8}`,
+    // Ease off right edge
+    `C 900 ${h * 0.37}, 1050 ${h * 0.40}, 1040 ${h * 0.44}`,
 
-    // Half-circle arc #3 — sweeps right again (bigger arc)
-    `C -80 ${y0 + s * 7.0}, 1060 ${y0 + s * 7.0}, 1060 ${y0 + s * 8.0}`,
+    // Wide gentle return to center-left
+    `C 1020 ${h * 0.50}, 400 ${h * 0.52}, 200 ${h * 0.56}`,
 
-    // Half-circle arc #4 — sweeps left, exits off left edge
-    `C 1060 ${y0 + s * 9.0}, -40 ${y0 + s * 9.0}, -40 ${y0 + s * 9.8}`,
+    // Drift further left, just barely off-screen
+    `C 60 ${h * 0.59}, -40 ${h * 0.62}, -30 ${h * 0.66}`,
 
-    // Final gentle arc trailing off bottom
-    `C -40 ${y0 + s * 10.4}, 500 ${y0 + s * 10.4}, 500 ${vH}`,
+    // Gentle arc back right across the page
+    `C -10 ${h * 0.70}, 500 ${h * 0.73}, 780 ${h * 0.78}`,
+
+    // Ease off right side again
+    `C 950 ${h * 0.81}, 1060 ${h * 0.84}, 1040 ${h * 0.87}`,
+
+    // Final gentle drift back to center, trailing off
+    `C 1000 ${h * 0.90}, 600 ${h * 0.93}, 400 ${h * 0.96}`,
+    `C 300 ${h * 0.98}, 250 ${h * 0.99}, 250 ${h}`,
   ].join(' ');
-}
-
-// Speed up at the turnaround points of each arc
-const LOOP_ZONES: [number, number][] = [
-  [0.15, 0.22],   // Arc #1 turnaround (right side)
-  [0.35, 0.42],   // Arc #2 turnaround (left side)
-  [0.55, 0.62],   // Arc #3 turnaround (right side)
-  [0.75, 0.82],   // Arc #4 turnaround (left side)
-];
-
-function getLerpForProgress(progress: number): number {
-  for (const [start, end] of LOOP_ZONES) {
-    if (progress >= start && progress <= end) {
-      // Ramp up in the loop zone — 2.5x faster at the peak
-      const mid = (start + end) / 2;
-      const dist = 1 - Math.abs(progress - mid) / ((end - start) / 2);
-      return BASE_LERP + dist * BASE_LERP * 1.5;
-    }
-  }
-  return BASE_LERP;
 }
 
 interface Props {
@@ -119,8 +106,7 @@ export default function VerticalThreadLine({
       if (Math.abs(diff) < 0.0001) {
         currentRef.current = targetRef.current;
       } else {
-        const lerp = getLerpForProgress(currentRef.current);
-        currentRef.current += diff * lerp;
+        currentRef.current += diff * LERP;
       }
       const len = lenRef.current;
       if (len) {

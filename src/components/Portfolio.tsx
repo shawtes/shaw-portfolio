@@ -361,7 +361,7 @@ export default function Portfolio() {
 
       {/* ═══ STATS BAR — counters ═══ */}
       <section style={{
-        padding: '60px max(5vw, 40px)',
+        padding: '100px max(5vw, 40px)',
         borderTop: '1px solid rgba(255,255,255,0.04)',
         borderBottom: '1px solid rgba(255,255,255,0.04)',
       }}>
@@ -374,7 +374,7 @@ export default function Portfolio() {
       </section>
 
 {/* ═══ FEATURED WORK — huge project names ═══ */}
-      <section id="work" style={{ padding: '100px max(5vw, 40px)', maxWidth: 1400, margin: '0 auto' }}>
+      <section id="work" style={{ padding: '140px max(5vw, 40px)', maxWidth: 1400, margin: '0 auto' }}>
         <Rv>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#555', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 16 }}>
             Featured Work
@@ -383,8 +383,8 @@ export default function Portfolio() {
         <TextReveal
           text="A selection of passionately crafted works"
           style={{
-            fontFamily: 'var(--font)', fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 800,
-            color: '#f0f1fa', letterSpacing: '-0.03em', marginBottom: 60, lineHeight: 1.15,
+            fontFamily: 'var(--font)', fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 800,
+            color: '#f0f1fa', letterSpacing: '-0.03em', marginBottom: 80, lineHeight: 1.15,
           }}
           wordDelay={0.05}
         />
@@ -399,7 +399,7 @@ export default function Portfolio() {
 
 {/* ═══ ABOUT — two column, big statement ═══ */}
       <section style={{
-        padding: '120px max(5vw, 40px)',
+        padding: '160px max(5vw, 40px)',
         maxWidth: 1400,
         margin: '0 auto',
         borderTop: '1px solid rgba(255,255,255,0.04)',
@@ -462,7 +462,7 @@ export default function Portfolio() {
 
 {/* ═══ EXPERIENCE — timeline ═══ */}
       <section style={{
-        padding: '100px max(5vw, 40px)',
+        padding: '160px max(5vw, 40px)',
         maxWidth: 1400,
         margin: '0 auto',
         borderTop: '1px solid rgba(255,255,255,0.04)',
@@ -474,8 +474,8 @@ export default function Portfolio() {
         </Rv>
         <Rv delay={0.05}>
           <h2 style={{
-            fontFamily: 'var(--font)', fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 800,
-            color: '#f0f1fa', letterSpacing: '-0.03em', marginBottom: 60, lineHeight: 1.05,
+            fontFamily: 'var(--font)', fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 800,
+            color: '#f0f1fa', letterSpacing: '-0.03em', marginBottom: 80, lineHeight: 1.05,
           }}>
             Background &<br />experience
           </h2>
@@ -541,7 +541,7 @@ export default function Portfolio() {
 
 {/* ═══ CONTACT — big CTA ═══ */}
       <section id="contact" style={{
-        padding: '120px max(5vw, 40px)',
+        padding: '180px max(5vw, 40px)',
         maxWidth: 1400,
         margin: '0 auto',
         borderTop: '1px solid rgba(255,255,255,0.04)',
