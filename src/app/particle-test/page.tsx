@@ -87,10 +87,10 @@ export default function ParticleTestPage() {
     }
 
     // Elliptical vignette — focus on face/upper body, fade out background
-    const vigCx = sampleW * 0.40;
-    const vigCy = sampleH * 0.36;
-    const vigRx = sampleW * 0.34;
-    const vigRy = sampleH * 0.44;
+    const vigCx = sampleW * 0.43;
+    const vigCy = sampleH * 0.40;
+    const vigRx = sampleW * 0.42;
+    const vigRy = sampleH * 0.50;
 
     const vignette = new Float32Array(sampleW * sampleH);
     for (let y = 0; y < sampleH; y++) {
@@ -98,7 +98,7 @@ export default function ParticleTestPage() {
         const nx = (x - vigCx) / vigRx;
         const ny = (y - vigCy) / vigRy;
         const d = Math.sqrt(nx * nx + ny * ny);
-        vignette[y * sampleW + x] = Math.max(0, Math.min(1, 1 - Math.pow(Math.max(0, (d - 0.55) / 0.65), 1.8)));
+        vignette[y * sampleW + x] = Math.max(0, Math.min(1, 1 - Math.pow(Math.max(0, (d - 0.5) / 0.6), 1.6)));
       }
     }
 

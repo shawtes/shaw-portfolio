@@ -353,11 +353,11 @@ self.onmessage = function(e) {
     gray[i] = (data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114) / 255;
   }
 
-  // Elliptical vignette
-  const vigCx = sampleW * 0.40;
-  const vigCy = sampleH * 0.36;
-  const vigRx = sampleW * 0.34;
-  const vigRy = sampleH * 0.44;
+  // Elliptical vignette — wider to capture right eye/brow, hair, jawline, lips
+  const vigCx = sampleW * 0.43;  // slightly right to include right-side features
+  const vigCy = sampleH * 0.40;  // lower center to include jawline + lips
+  const vigRx = sampleW * 0.42;  // wider horizontal for hair + right eye/brow
+  const vigRy = sampleH * 0.50;  // taller for jawline
 
   const vignette = new Float32Array(sampleW * sampleH);
   for (let y = 0; y < sampleH; y++) {
@@ -365,20 +365,40 @@ self.onmessage = function(e) {
       const nx = (x - vigCx) / vigRx;
       const ny = (y - vigCy) / vigRy;
       const d = Math.sqrt(nx * nx + ny * ny);
-      vignette[y * sampleW + x] = Math.max(0, Math.min(1, 1 - Math.pow(Math.max(0, (d - 0.55) / 0.65), 1.8)));
+      vignette[y * sampleW + x] = Math.max(0, Math.min(1, 1 - Math.pow(Math.max(0, (d - 0.5) / 0.6), 1.6)));
     }
   }
 
-  // Density map
+  // Sobel edge detection — boosts detail at eyes, brows, lips, jawline
+  const edges = new Float32Array(sampleW * sampleH);
+  for (let y = 1; y < sampleH - 1; y++) {
+    for (let x = 1; x < sampleW - 1; x++) {
+      const tl = gray[(y-1)*sampleW+(x-1)], t = gray[(y-1)*sampleW+x], tr = gray[(y-1)*sampleW+(x+1)];
+      const l = gray[y*sampleW+(x-1)], r = gray[y*sampleW+(x+1)];
+      const bl = gray[(y+1)*sampleW+(x-1)], b2 = gray[(y+1)*sampleW+x], br = gray[(y+1)*sampleW+(x+1)];
+      const gx = -tl - 2*l - bl + tr + 2*r + br;
+      const gy = -tl - 2*t - tr + bl + 2*b2 + br;
+      edges[y * sampleW + x] = Math.sqrt(gx*gx + gy*gy);
+    }
+  }
+  let maxEdge = 0;
+  for (let i = 0; i < edges.length; i++) if (edges[i] > maxEdge) maxEdge = edges[i];
+  if (maxEdge > 0) for (let i = 0; i < edges.length; i++) edges[i] /= maxEdge;
+
+  // Density map — darkness + edge boost for facial features
   const density = new Float32Array(sampleW * sampleH);
   let maxDensity = 0;
   for (let i = 0; i < gray.length; i++) {
     const b = gray[i];
     const v = vignette[i];
+    const e = edges[i];
     if (b < bgThreshold || v < 0.01) {
       density[i] = 0;
     } else {
-      density[i] = Math.pow(1 - b, 1.5) * v;
+      // Base density from darkness + edge boost for feature definition
+      const tonalDensity = Math.pow(1 - b, 1.5);
+      const edgeBoost = Math.pow(e, 0.8) * 0.6;  // strong edges get extra particles
+      density[i] = Math.max(tonalDensity, tonalDensity + edgeBoost) * v;
     }
     if (density[i] > maxDensity) maxDensity = density[i];
   }
