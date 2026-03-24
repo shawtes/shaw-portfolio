@@ -36,16 +36,17 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
 
     if (p < 0.18) {
       // Standing in front of desk, facing monitor (-Z direction)
+      // We see the character from behind — their front faces the screen
       group.current.position.set(0, 0, 0.6);
       group.current.position.y += Math.sin(t * 1.2) * 0.003;
-      group.current.rotation.set(0, 0, 0); // face monitor (-Z)
+      group.current.rotation.set(0, Math.PI, 0);
       group.current.scale.setScalar(0.9);
     } else if (p < 0.32) {
       // Getting pulled from standing position toward monitor
       const pull = (p - 0.18) / 0.14;
       const ease = pull * pull * pull;
       group.current.position.set(0, ease * 0.5, 0.6 - ease * 1.2);
-      group.current.rotation.set(-ease * 0.8, 0, 0);
+      group.current.rotation.set(-ease * 0.8, Math.PI, 0);
       group.current.scale.setScalar(0.9 * (1 - ease * 0.5));
     } else if (p < 0.85) {
       // INSIDE COMPUTER: Shaw travels into -Z
@@ -66,13 +67,13 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
       limbPhase.current += delta * 1.5;
       const tumbleDecay = 1 - insideT * 0.7;
       group.current.rotation.x = -Math.PI * 0.3 + Math.sin(limbPhase.current * 0.6) * 0.15 * tumbleDecay;
-      group.current.rotation.y = 0;
+      group.current.rotation.y = Math.PI;
       group.current.rotation.z = Math.cos(limbPhase.current * 0.5) * 0.1 * tumbleDecay;
     } else {
       // Emergence
       const emerge = (p - 0.85) / 0.15;
       group.current.position.set(0, -0.3, -12);
-      group.current.rotation.set(0, 0, 0);
+      group.current.rotation.set(0, Math.PI, 0);
       group.current.scale.setScalar(0.08 * (1 - emerge));
     }
   });
@@ -106,34 +107,271 @@ void main() {
 function Room({ pullProgress }: { pullProgress: number }) {
   const u = useMemo(() => ({ uTime: { value: 0 }, uPull: { value: 0 } }), []);
   useFrame((s) => { u.uTime.value = s.clock.elapsedTime; u.uPull.value = pullProgress; });
+
+  const wallColor = '#1a1820';
+  const floorColor = '#2a2018';
+  const trimColor = '#0e0d12';
+  const shelfColor = '#1c1712';
+
   return (
     <group>
-      {/* Desk */}
-      <mesh position={[0,0.7,-0.15]}><boxGeometry args={[1.6,0.04,0.75]} /><meshStandardMaterial color="#2a1f14" roughness={0.6} /></mesh>
-      {[[-0.72,0.35,-0.47],[0.72,0.35,-0.47],[-0.72,0.35,0.17],[0.72,0.35,0.17]].map((p,i)=>(
-        <mesh key={i} position={p as [number,number,number]}><boxGeometry args={[0.04,0.7,0.04]} /><meshStandardMaterial color="#1f1710" /></mesh>
+      {/* ═══ FLOOR — dark wood ═══ */}
+      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[6, 5]} />
+        <meshStandardMaterial color={floorColor} roughness={0.7} metalness={0.1} />
+      </mesh>
+      {/* Floor planks (subtle lines) */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <mesh key={`plank${i}`} position={[-2.5 + i * 0.72, 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.01, 5]} />
+          <meshStandardMaterial color="#181210" roughness={1} />
+        </mesh>
       ))}
-      {/* Keyboard */}
-      <mesh position={[0,0.74,0]}><boxGeometry args={[0.35,0.01,0.12]} /><meshStandardMaterial color="#111" metalness={0.3} /></mesh>
-      {/* Monitor frame */}
-      <mesh position={[0,1.15,-0.35]}><boxGeometry args={[0.84,0.54,0.025]} /><meshStandardMaterial color="#080808" metalness={0.6} /></mesh>
-      {/* Monitor screen — emissive for bloom */}
-      <mesh position={[0,1.15,-0.335]}>
-        <planeGeometry args={[0.78,0.48]} />
+
+      {/* ═══ WALLS ═══ */}
+      {/* Back wall */}
+      <mesh position={[0, 1.5, -1.2]}>
+        <planeGeometry args={[6, 3]} />
+        <meshStandardMaterial color={wallColor} roughness={0.9} />
+      </mesh>
+      {/* Left wall */}
+      <mesh position={[-3, 1.5, 1.3]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[5, 3]} />
+        <meshStandardMaterial color={wallColor} roughness={0.9} />
+      </mesh>
+      {/* Right wall */}
+      <mesh position={[3, 1.5, 1.3]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[5, 3]} />
+        <meshStandardMaterial color={wallColor} roughness={0.9} />
+      </mesh>
+      {/* Ceiling */}
+      <mesh position={[0, 3, 1.3]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[6, 5]} />
+        <meshStandardMaterial color="#0d0c10" roughness={1} />
+      </mesh>
+      {/* Baseboard trim */}
+      <mesh position={[0, 0.04, -1.18]}>
+        <boxGeometry args={[6, 0.08, 0.02]} />
+        <meshStandardMaterial color={trimColor} roughness={0.5} />
+      </mesh>
+
+      {/* ═══ WINDOW on left wall — ambient light source ═══ */}
+      <group position={[-2.98, 1.6, 0.5]}>
+        {/* Window frame */}
+        <mesh rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[1.0, 1.3, 0.05]} />
+          <meshStandardMaterial color="#0a0a0e" roughness={0.3} metalness={0.5} />
+        </mesh>
+        {/* Window glass — emissive blue for moonlight */}
+        <mesh position={[0.02, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry args={[0.85, 1.15]} />
+          <meshStandardMaterial color="#1a2a40" emissive="#1a3050" emissiveIntensity={0.5} transparent opacity={0.7} />
+        </mesh>
+        {/* Window cross bar */}
+        <mesh position={[0.03, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[0.85, 0.025, 0.02]} />
+          <meshStandardMaterial color="#0a0a0e" />
+        </mesh>
+        <mesh position={[0.03, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <boxGeometry args={[0.025, 1.15, 0.02]} />
+          <meshStandardMaterial color="#0a0a0e" />
+        </mesh>
+      </group>
+      {/* Moonlight from window */}
+      <pointLight position={[-2.5, 1.6, 0.5]} color="#4477aa" intensity={1.2} distance={5} decay={2} />
+
+      {/* ═══ DESK — dark walnut ═══ */}
+      <mesh position={[0, 0.7, -0.15]}>
+        <boxGeometry args={[1.6, 0.045, 0.75]} />
+        <meshStandardMaterial color="#2a1f14" roughness={0.5} metalness={0.05} />
+      </mesh>
+      {/* Desk legs — tapered metal */}
+      {[[-0.72, 0.35, -0.47], [0.72, 0.35, -0.47], [-0.72, 0.35, 0.17], [0.72, 0.35, 0.17]].map((p, i) => (
+        <mesh key={`leg${i}`} position={p as [number, number, number]}>
+          <boxGeometry args={[0.035, 0.7, 0.035]} />
+          <meshStandardMaterial color="#222" metalness={0.7} roughness={0.3} />
+        </mesh>
+      ))}
+
+      {/* ═══ MONITOR ═══ */}
+      <mesh position={[0, 1.15, -0.35]}>
+        <boxGeometry args={[0.84, 0.54, 0.02]} />
+        <meshStandardMaterial color="#060606" metalness={0.7} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 1.15, -0.335]}>
+        <planeGeometry args={[0.78, 0.48]} />
         <shaderMaterial vertexShader={screenVert} fragmentShader={screenFrag} uniforms={u} />
       </mesh>
-      {/* Monitor glow plane (invisible, emissive for bloom) */}
-      <mesh position={[0,1.15,-0.33]}>
-        <planeGeometry args={[0.9,0.6]} />
+      <mesh position={[0, 1.15, -0.33]}>
+        <planeGeometry args={[0.9, 0.6]} />
         <meshBasicMaterial color="#22D3EE" transparent opacity={0.08} />
       </mesh>
       {/* Monitor stand */}
-      <mesh position={[0,0.82,-0.33]}><boxGeometry args={[0.05,0.18,0.04]} /><meshStandardMaterial color="#080808" metalness={0.5} /></mesh>
-      <mesh position={[0,0.73,-0.33]}><boxGeometry args={[0.22,0.015,0.1]} /><meshStandardMaterial color="#080808" metalness={0.5} /></mesh>
-      {/* Floor — slightly reflective */}
-      <mesh position={[0,0,0]} rotation={[-Math.PI/2,0,0]}>
-        <planeGeometry args={[14,14]} />
-        <meshStandardMaterial color="#060710" metalness={0.3} roughness={0.8} />
+      <mesh position={[0, 0.82, -0.33]}>
+        <boxGeometry args={[0.04, 0.2, 0.04]} />
+        <meshStandardMaterial color="#060606" metalness={0.7} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.725, -0.33]}>
+        <boxGeometry args={[0.22, 0.012, 0.12]} />
+        <meshStandardMaterial color="#060606" metalness={0.7} roughness={0.2} />
+      </mesh>
+
+      {/* ═══ KEYBOARD + MOUSE ═══ */}
+      <mesh position={[0, 0.74, 0.02]}>
+        <boxGeometry args={[0.38, 0.012, 0.13]} />
+        <meshStandardMaterial color="#111" metalness={0.4} roughness={0.6} />
+      </mesh>
+      {/* Mouse */}
+      <mesh position={[0.32, 0.735, 0.05]}>
+        <boxGeometry args={[0.05, 0.015, 0.08]} />
+        <meshStandardMaterial color="#111" metalness={0.3} roughness={0.7} />
+      </mesh>
+      {/* Mousepad */}
+      <mesh position={[0.32, 0.723, 0.05]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.22, 0.18]} />
+        <meshStandardMaterial color="#0f0f14" roughness={0.95} />
+      </mesh>
+
+      {/* ═══ DESK LAMP — right side ═══ */}
+      <group position={[-0.6, 0.73, -0.1]}>
+        {/* Base */}
+        <mesh>
+          <cylinderGeometry args={[0.06, 0.07, 0.02, 16]} />
+          <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.2} />
+        </mesh>
+        {/* Arm */}
+        <mesh position={[0, 0.2, -0.05]} rotation={[0.3, 0, 0]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.4, 8]} />
+          <meshStandardMaterial color="#222" metalness={0.8} roughness={0.3} />
+        </mesh>
+        {/* Shade */}
+        <mesh position={[0, 0.38, -0.12]} rotation={[0.5, 0, 0]}>
+          <coneGeometry args={[0.06, 0.08, 16, 1, true]} />
+          <meshStandardMaterial color="#1a1a1a" metalness={0.6} roughness={0.3} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Lamp light */}
+        <pointLight position={[0, 0.35, -0.12]} color="#ffddaa" intensity={0.8} distance={2} decay={2} />
+      </group>
+
+      {/* ═══ COFFEE MUG ═══ */}
+      <mesh position={[0.55, 0.78, 0.1]}>
+        <cylinderGeometry args={[0.032, 0.028, 0.07, 12]} />
+        <meshStandardMaterial color="#e8e0d0" roughness={0.8} />
+      </mesh>
+      {/* Mug handle */}
+      <mesh position={[0.585, 0.78, 0.1]} rotation={[0, 0, Math.PI / 2]}>
+        <torusGeometry args={[0.02, 0.005, 8, 12, Math.PI]} />
+        <meshStandardMaterial color="#e8e0d0" roughness={0.8} />
+      </mesh>
+
+      {/* ═══ BOOKSHELF — right wall ═══ */}
+      <group position={[2.2, 0, -0.5]}>
+        {/* Shelf frame */}
+        {[0, 0.7, 1.4, 2.1].map((y, i) => (
+          <mesh key={`shelf${i}`} position={[0, y, 0]}>
+            <boxGeometry args={[0.7, 0.025, 0.28]} />
+            <meshStandardMaterial color={shelfColor} roughness={0.7} />
+          </mesh>
+        ))}
+        {/* Sides */}
+        <mesh position={[-0.34, 1.05, 0]}>
+          <boxGeometry args={[0.02, 2.1, 0.28]} />
+          <meshStandardMaterial color={shelfColor} roughness={0.7} />
+        </mesh>
+        <mesh position={[0.34, 1.05, 0]}>
+          <boxGeometry args={[0.02, 2.1, 0.28]} />
+          <meshStandardMaterial color={shelfColor} roughness={0.7} />
+        </mesh>
+        {/* Books — colored spines */}
+        {[
+          { x: -0.2, y: 0.45, h: 0.28, c: '#8b2252' },
+          { x: -0.1, y: 0.43, h: 0.24, c: '#2255aa' },
+          { x: 0.0, y: 0.47, h: 0.32, c: '#1a6644' },
+          { x: 0.1, y: 0.44, h: 0.26, c: '#aa7722' },
+          { x: 0.2, y: 0.46, h: 0.30, c: '#552288' },
+          { x: -0.15, y: 1.15, h: 0.26, c: '#993333' },
+          { x: -0.02, y: 1.17, h: 0.30, c: '#336699' },
+          { x: 0.1, y: 1.14, h: 0.24, c: '#448844' },
+          { x: 0.22, y: 1.16, h: 0.28, c: '#885522' },
+          { x: -0.1, y: 1.85, h: 0.24, c: '#664488' },
+          { x: 0.05, y: 1.87, h: 0.28, c: '#cc6633' },
+          { x: 0.18, y: 1.84, h: 0.22, c: '#337755' },
+        ].map((b, i) => (
+          <mesh key={`book${i}`} position={[b.x, b.y, 0.02]}>
+            <boxGeometry args={[0.06, b.h, 0.18]} />
+            <meshStandardMaterial color={b.c} roughness={0.85} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* ═══ POTTED PLANT — left side of desk ═══ */}
+      <group position={[-1.2, 0, 0.2]}>
+        {/* Pot */}
+        <mesh position={[0, 0.15, 0]}>
+          <cylinderGeometry args={[0.1, 0.08, 0.3, 12]} />
+          <meshStandardMaterial color="#3a2a1a" roughness={0.9} />
+        </mesh>
+        {/* Soil */}
+        <mesh position={[0, 0.3, 0]}>
+          <cylinderGeometry args={[0.09, 0.09, 0.02, 12]} />
+          <meshStandardMaterial color="#1a1208" roughness={1} />
+        </mesh>
+        {/* Stem */}
+        <mesh position={[0, 0.55, 0]}>
+          <cylinderGeometry args={[0.008, 0.01, 0.5, 6]} />
+          <meshStandardMaterial color="#2a4420" roughness={0.9} />
+        </mesh>
+        {/* Leaves — simple flat planes */}
+        {[
+          { pos: [0.06, 0.65, 0.03], rot: [0.3, 0.5, 0.2] },
+          { pos: [-0.05, 0.7, -0.04], rot: [-0.2, -0.8, 0.1] },
+          { pos: [0.03, 0.75, -0.02], rot: [0.1, 1.2, -0.3] },
+          { pos: [-0.04, 0.6, 0.05], rot: [0.4, -0.3, 0.5] },
+          { pos: [0.02, 0.8, 0.01], rot: [-0.3, 0.2, -0.1] },
+        ].map((l, i) => (
+          <mesh key={`leaf${i}`} position={l.pos as [number, number, number]} rotation={l.rot as [number, number, number]}>
+            <planeGeometry args={[0.12, 0.06]} />
+            <meshStandardMaterial color="#1a4422" roughness={0.8} side={THREE.DoubleSide} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* ═══ WALL ART — framed poster on back wall ═══ */}
+      <group position={[1.2, 1.7, -1.18]}>
+        {/* Frame */}
+        <mesh>
+          <boxGeometry args={[0.55, 0.75, 0.025]} />
+          <meshStandardMaterial color="#0a0a0a" metalness={0.5} roughness={0.3} />
+        </mesh>
+        {/* Art — abstract gradient */}
+        <mesh position={[0, 0, 0.014]}>
+          <planeGeometry args={[0.48, 0.68]} />
+          <meshStandardMaterial color="#0c1520" emissive="#0a1828" emissiveIntensity={0.3} roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* ═══ SMALL FRAME — left of monitor on back wall ═══ */}
+      <group position={[-1.0, 1.4, -1.18]}>
+        <mesh>
+          <boxGeometry args={[0.3, 0.3, 0.02]} />
+          <meshStandardMaterial color="#0a0a0a" metalness={0.5} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0, 0.012]}>
+          <planeGeometry args={[0.25, 0.25]} />
+          <meshStandardMaterial color="#1a1520" emissive="#150a20" emissiveIntensity={0.2} roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* ═══ RUG under desk area ═══ */}
+      <mesh position={[0, 0.003, 0.3]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.4, 1.8]} />
+        <meshStandardMaterial color="#151222" roughness={0.95} />
+      </mesh>
+
+      {/* ═══ CABLE on floor ═══ */}
+      <mesh position={[0.3, 0.005, -0.5]} rotation={[-Math.PI / 2, 0, 0.3]}>
+        <planeGeometry args={[0.008, 1.2]} />
+        <meshStandardMaterial color="#111" roughness={0.7} />
       </mesh>
     </group>
   );
