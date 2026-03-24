@@ -1,46 +1,76 @@
 'use client';
 
 /**
- * VerticalThreadLine — neon ribbon that draws as you scroll.
- * Starts from the left wall near the hero buttons.
- * Loops off-screen and returns with variable-speed drawing.
+ * VerticalThreadLine — neon ribbon drawn in perfect sync with scroll.
+ *
+ * The line moves exactly with your scroll — no racing ahead, no lag.
+ * It flows like a painter's brush: gentle curves, whimsical loops,
+ * flourishes that cross over themselves, organic and alive.
  */
 
 import { useRef, useEffect, useState } from 'react';
 
-const LERP = 0.06;
-
 function buildPath(vH: number): string {
   if (vH < 100) return '';
-  // The line flows gently through the page like a lazy river.
-  // Wide, graceful curves — never sharp, never zig-zaggy.
-  // Each arc spans a huge vertical distance so it feels spacious.
   const h = vH;
-  return [
-    // Enter from left wall, well below the hero buttons
-    `M -30 ${h * 0.12}`,
 
-    // Long gentle arc drifting to the right — very wide radius
-    `C 200 ${h * 0.14}, 700 ${h * 0.20}, 820 ${h * 0.30}`,
+  // Think like a painter: the brush enters gently, flows across the canvas,
+  // occasionally lifts into a playful loop, drifts with the composition,
+  // spirals at moments of emphasis, and trails off gracefully.
+
+  return [
+    // ── Enter from left wall, below the hero buttons ──
+    `M -20 ${h * 0.11}`,
+
+    // Gentle drift rightward — the brush finds its rhythm
+    `C 80 ${h * 0.12}, 300 ${h * 0.15}, 420 ${h * 0.18}`,
+
+    // Flowing arc toward center-right, unhurried
+    `C 560 ${h * 0.21}, 680 ${h * 0.26}, 700 ${h * 0.30}`,
+
+    // ── Whimsical loop #1 — a painter's flourish ──
+    // The line curls over itself like a signature
+    `C 720 ${h * 0.33}, 760 ${h * 0.31}, 740 ${h * 0.29}`,
+    `C 710 ${h * 0.27}, 650 ${h * 0.28}, 660 ${h * 0.31}`,
+    `C 670 ${h * 0.34}, 730 ${h * 0.36}, 750 ${h * 0.35}`,
+
+    // Drift gently rightward, easing off the edge
+    `C 800 ${h * 0.34}, 900 ${h * 0.37}, 960 ${h * 0.40}`,
+
+    // Soft return — wide sweeping arc back toward center
+    `C 1020 ${h * 0.43}, 900 ${h * 0.47}, 700 ${h * 0.49}`,
+
+    // Long lazy drift left across the page
+    `C 500 ${h * 0.51}, 300 ${h * 0.53}, 180 ${h * 0.56}`,
+
+    // ── Whimsical loop #2 — spiral flourish near left side ──
+    `C 100 ${h * 0.58}, 60 ${h * 0.56}, 80 ${h * 0.54}`,
+    `C 100 ${h * 0.52}, 160 ${h * 0.53}, 150 ${h * 0.56}`,
+    `C 140 ${h * 0.59}, 80 ${h * 0.60}, 60 ${h * 0.62}`,
+
+    // Ease off left edge — barely disappears
+    `C 20 ${h * 0.64}, -30 ${h * 0.66}, -20 ${h * 0.68}`,
+
+    // Gentle return, the brush drifts back into the composition
+    `C 0 ${h * 0.70}, 150 ${h * 0.71}, 350 ${h * 0.73}`,
+
+    // Wide graceful arc across the full page
+    `C 500 ${h * 0.75}, 700 ${h * 0.77}, 800 ${h * 0.79}`,
+
+    // ── Whimsical loop #3 — an elegant cursive loop ──
+    `C 860 ${h * 0.80}, 880 ${h * 0.78}, 850 ${h * 0.77}`,
+    `C 810 ${h * 0.76}, 780 ${h * 0.78}, 800 ${h * 0.80}`,
+    `C 820 ${h * 0.82}, 870 ${h * 0.83}, 900 ${h * 0.82}`,
 
     // Ease off right edge
-    `C 900 ${h * 0.37}, 1050 ${h * 0.40}, 1040 ${h * 0.44}`,
+    `C 960 ${h * 0.81}, 1040 ${h * 0.83}, 1030 ${h * 0.86}`,
 
-    // Wide gentle return to center-left
-    `C 1020 ${h * 0.50}, 400 ${h * 0.52}, 200 ${h * 0.56}`,
+    // Final drift — the brush relaxes, trailing across to center
+    `C 1010 ${h * 0.89}, 800 ${h * 0.91}, 600 ${h * 0.93}`,
+    `C 400 ${h * 0.95}, 300 ${h * 0.97}, 350 ${h * 0.99}`,
 
-    // Drift further left, just barely off-screen
-    `C 60 ${h * 0.59}, -40 ${h * 0.62}, -30 ${h * 0.66}`,
-
-    // Gentle arc back right across the page
-    `C -10 ${h * 0.70}, 500 ${h * 0.73}, 780 ${h * 0.78}`,
-
-    // Ease off right side again
-    `C 950 ${h * 0.81}, 1060 ${h * 0.84}, 1040 ${h * 0.87}`,
-
-    // Final gentle drift back to center, trailing off
-    `C 1000 ${h * 0.90}, 600 ${h * 0.93}, 400 ${h * 0.96}`,
-    `C 300 ${h * 0.98}, 250 ${h * 0.99}, 250 ${h}`,
+    // Trail off
+    `L 380 ${h}`,
   ].join(' ');
 }
 
@@ -59,9 +89,7 @@ export default function VerticalThreadLine({
   const pathRef = useRef<SVGPathElement>(null);
   const glowRef = useRef<SVGPathElement>(null);
   const lenRef = useRef(0);
-  const rafIdRef = useRef<number | null>(null);
-  const targetRef = useRef(0);
-  const currentRef = useRef(0);
+  const progressRef = useRef(0);
 
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -98,28 +126,10 @@ export default function VerticalThreadLine({
     return () => cancelAnimationFrame(id);
   }, [size]);
 
-  // Continuous lerp loop — variable speed based on position
-  useEffect(() => {
-    const loop = () => {
-      rafIdRef.current = requestAnimationFrame(loop);
-      const diff = targetRef.current - currentRef.current;
-      if (Math.abs(diff) < 0.0001) {
-        currentRef.current = targetRef.current;
-      } else {
-        currentRef.current += diff * LERP;
-      }
-      const len = lenRef.current;
-      if (len) {
-        const offset = `${len * (1 - currentRef.current)}`;
-        if (pathRef.current) pathRef.current.style.strokeDashoffset = offset;
-        if (glowRef.current) glowRef.current.style.strokeDashoffset = offset;
-      }
-    };
-    rafIdRef.current = requestAnimationFrame(loop);
-    return () => { if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current); };
-  }, []);
-
-  // Scroll → target progress
+  // Scroll → draw in perfect sync. No lerp, no lag.
+  // The line reveals exactly as much as you've scrolled.
+  // A tiny CSS transition on stroke-dashoffset gives micro-smoothing
+  // without the disconnected "racing ahead" feeling.
   useEffect(() => {
     const update = () => {
       const parent = wrapRef.current?.parentElement;
@@ -131,7 +141,15 @@ export default function VerticalThreadLine({
       const scrollable = totalH - vh;
       if (scrollable <= 0) return;
       const raw = scrolled / scrollable;
-      targetRef.current = Math.min(1, Math.max(0, raw));
+      const progress = Math.min(1, Math.max(0, raw));
+      progressRef.current = progress;
+
+      const len = lenRef.current;
+      if (len) {
+        const offset = len * (1 - progress);
+        if (pathRef.current) pathRef.current.style.strokeDashoffset = `${offset}`;
+        if (glowRef.current) glowRef.current.style.strokeDashoffset = `${offset}`;
+      }
     };
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update, { passive: true });
@@ -147,6 +165,11 @@ export default function VerticalThreadLine({
   if (!size.h) return <div ref={wrapRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />;
 
   const pathD = buildPath(size.h);
+
+  // Micro-smooth transition so it doesn't stutter on fast scroll
+  const pathStyle: React.CSSProperties = {
+    transition: 'stroke-dashoffset 0.08s linear',
+  };
 
   return (
     <div
@@ -170,6 +193,7 @@ export default function VerticalThreadLine({
           opacity={opacity * 0.15}
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={pathStyle}
         />
         {/* Core neon line */}
         <path
@@ -181,6 +205,7 @@ export default function VerticalThreadLine({
           opacity={opacity}
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={pathStyle}
         />
       </svg>
     </div>
