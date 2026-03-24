@@ -36,17 +36,17 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
 
     if (p < 0.18) {
       // Standing in front of desk, facing monitor (-Z direction)
-      // We see the character from behind — their front faces the screen
+      // Standing, facing the monitor screen
       group.current.position.set(0, 0, 0.6);
       group.current.position.y += Math.sin(t * 1.2) * 0.003;
-      group.current.rotation.set(0, Math.PI, 0);
+      group.current.rotation.set(0, 0, 0);
       group.current.scale.setScalar(0.9);
     } else if (p < 0.32) {
       // Getting pulled from standing position toward monitor
       const pull = (p - 0.18) / 0.14;
       const ease = pull * pull * pull;
       group.current.position.set(0, ease * 0.5, 0.6 - ease * 1.2);
-      group.current.rotation.set(-ease * 0.8, Math.PI, 0);
+      group.current.rotation.set(-ease * 0.8, 0, 0);
       group.current.scale.setScalar(0.9 * (1 - ease * 0.5));
     } else if (p < 0.85) {
       // INSIDE COMPUTER: Shaw travels into -Z
@@ -67,13 +67,13 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
       limbPhase.current += delta * 1.5;
       const tumbleDecay = 1 - insideT * 0.7;
       group.current.rotation.x = -Math.PI * 0.3 + Math.sin(limbPhase.current * 0.6) * 0.15 * tumbleDecay;
-      group.current.rotation.y = Math.PI;
+      group.current.rotation.y = 0;
       group.current.rotation.z = Math.cos(limbPhase.current * 0.5) * 0.1 * tumbleDecay;
     } else {
       // Emergence
       const emerge = (p - 0.85) / 0.15;
       group.current.position.set(0, -0.3, -12);
-      group.current.rotation.set(0, Math.PI, 0);
+      group.current.rotation.set(0, 0, 0);
       group.current.scale.setScalar(0.08 * (1 - emerge));
     }
   });
@@ -81,7 +81,7 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
   return (
     <group ref={group}>
       <Suspense fallback={null}>
-        <SoldierModel action={action} rotation={[-Math.PI / 2, 0, 0]} scale={0.01} />
+        <SoldierModel action={action} rotation={[-Math.PI / 2, 0, Math.PI + 0.15]} scale={0.01} />
       </Suspense>
     </group>
   );
@@ -533,7 +533,7 @@ export function MiniShaw() {
   return (
     <group ref={group}>
       <Suspense fallback={null}>
-        <SoldierModel action="Idle" rotation={[-Math.PI / 2, 0, 0]} scale={0.01} />
+        <SoldierModel action="Idle" rotation={[-Math.PI / 2, 0, Math.PI + 0.15]} scale={0.01} />
       </Suspense>
     </group>
   );
