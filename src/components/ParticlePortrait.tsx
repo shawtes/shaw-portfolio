@@ -57,6 +57,35 @@ export default function ParticlePortrait({
   const rafRef = useRef<number>(0);
   const readyRef = useRef(false);
 
+  // Fallback: simple rejection sampling without Lloyd (no worker needed)
+  const fallbackSample = (data: Uint8ClampedArray, sw: number, sh: number) => {
+    const gray = new Float32Array(sw * sh);
+    for (let i = 0; i < sw * sh; i++) {
+      const idx = i * 4;
+      gray[i] = (data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114) / 255;
+    }
+    const particles: Particle[] = [];
+    let attempts = 0;
+    while (particles.length < particleCount && attempts < particleCount * 50) {
+      attempts++;
+      const sx = Math.random() * (sw - 2) + 1;
+      const sy = Math.random() * (sh - 2) + 1;
+      const idx = Math.floor(sy) * sw + Math.floor(sx);
+      const b = gray[idx];
+      if (b >= bgThreshold && Math.random() < Math.pow(1 - b, 1.5)) {
+        const px = (sx / sw) * width;
+        const py = (sy / sh) * height;
+        particles.push({
+          x: px, y: py, ox: px, oy: py, vx: 0, vy: 0,
+          size: 0.5 + (1 - b) * 2.2, brightness: b, fade: 1,
+        });
+      }
+    }
+    particlesRef.current = particles;
+    edgesRef.current = [];
+    readyRef.current = true;
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -83,19 +112,32 @@ export default function ParticlePortrait({
       const imageData = octx.getImageData(0, 0, sampleW, sampleH);
 
       // Offload heavy computation to Web Worker
-      const worker = new Worker('/workers/lloyd-worker.js');
-      const buffer = imageData.data.buffer.slice(0);
-      worker.postMessage({
-        imageData: buffer,
-        sampleW, sampleH, particleCount, bgThreshold, lloydIterations, width, height,
-      }, [buffer]);
+      try {
+        const worker = new Worker('/workers/lloyd-worker.js');
+        const buffer = imageData.data.buffer.slice(0);
 
-      worker.onmessage = (ev: MessageEvent) => {
-        particlesRef.current = ev.data.particles;
-        edgesRef.current = ev.data.edges;
-        readyRef.current = true;
-        worker.terminate();
-      };
+        worker.onerror = () => {
+          // Worker failed — fall back to simple sampling on main thread
+          console.warn('Lloyd worker failed, using fallback');
+          fallbackSample(imageData.data, sampleW, sampleH);
+          worker.terminate();
+        };
+
+        worker.onmessage = (ev: MessageEvent) => {
+          particlesRef.current = ev.data.particles;
+          edgesRef.current = ev.data.edges;
+          readyRef.current = true;
+          worker.terminate();
+        };
+
+        worker.postMessage({
+          imageData: buffer,
+          sampleW, sampleH, particleCount, bgThreshold, lloydIterations, width, height,
+        }, [buffer]);
+      } catch {
+        // Worker not supported — fall back
+        fallbackSample(imageData.data, sampleW, sampleH);
+      }
     };
     img.src = src;
 

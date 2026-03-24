@@ -17,14 +17,9 @@ const IntroExperience = dynamic(() => import('../components/IntroExperience'), {
 const Portfolio = dynamic(() => import('../components/Portfolio'), { ssr: false });
 
 export default function Page() {
-  const [phase, setPhase] = useState<'intro' | 'disposing' | 'portfolio'>(() => {
-    // Skip intro for returning visitors in the same session
-    if (typeof window !== 'undefined' && sessionStorage.getItem('introSeen')) return 'portfolio';
-    return 'intro';
-  });
+  const [phase, setPhase] = useState<'intro' | 'disposing' | 'portfolio'>('intro');
 
   const handleIntroComplete = useCallback(() => {
-    if (typeof window !== 'undefined') sessionStorage.setItem('introSeen', '1');
     setPhase('disposing');
   }, []);
 
