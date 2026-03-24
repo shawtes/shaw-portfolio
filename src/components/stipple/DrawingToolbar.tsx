@@ -41,6 +41,8 @@ export default function DrawingToolbar({
     <div style={{
       position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
       zIndex: 20, display: 'flex', alignItems: 'center', gap: 6,
+      flexWrap: 'wrap', justifyContent: 'center',
+      maxWidth: 'calc(100vw - 24px)',
       background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(12px)',
       border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10,
       padding: '6px 10px', userSelect: 'none',

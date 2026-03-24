@@ -514,7 +514,7 @@ export default function Portfolio() {
                 Awards & Recognition
               </div>
             </Rv>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
               {AWARDS.map((a, i) => (
                 <Rv key={i} delay={i * 0.08}>
                   <div style={{
@@ -566,21 +566,21 @@ export default function Portfolio() {
         <Rv delay={0.15}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <a href="mailto:stesfaye4@student.gsu.edu" style={{
-              fontFamily: 'var(--mono)', fontSize: 13, color: '#050507', background: '#c1ff00',
-              padding: '16px 32px', borderRadius: 100, textDecoration: 'none', fontWeight: 500,
+              fontFamily: 'var(--mono)', fontSize: isMobile ? 11 : 13, color: '#050507', background: '#c1ff00',
+              padding: isMobile ? '12px 20px' : '16px 32px', borderRadius: 100, textDecoration: 'none', fontWeight: 500,
             }}>
               stesfaye4@student.gsu.edu →
             </a>
             <a href="https://github.com/shawtes" target="_blank" rel="noopener noreferrer" style={{
               fontFamily: 'var(--mono)', fontSize: 13, color: '#888',
-              padding: '16px 32px', borderRadius: 100, textDecoration: 'none',
+              padding: isMobile ? '12px 20px' : '16px 32px', borderRadius: 100, textDecoration: 'none',
               border: '1px solid rgba(255,255,255,0.1)',
             }}>
               GitHub ↗
             </a>
             <a href="https://linkedin.com/in/sineshawtesfaye" target="_blank" rel="noopener noreferrer" style={{
               fontFamily: 'var(--mono)', fontSize: 13, color: '#888',
-              padding: '16px 32px', borderRadius: 100, textDecoration: 'none',
+              padding: isMobile ? '12px 20px' : '16px 32px', borderRadius: 100, textDecoration: 'none',
               border: '1px solid rgba(255,255,255,0.1)',
             }}>
               LinkedIn ↗

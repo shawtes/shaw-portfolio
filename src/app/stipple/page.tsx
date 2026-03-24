@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import ControlsSidebar from '@/components/stipple/ControlsSidebar';
 import StippleCanvas from '@/components/stipple/StippleCanvas';
 import ProgressBar from '@/components/stipple/ProgressBar';
@@ -10,7 +10,21 @@ import DrawingToolbar from '@/components/stipple/DrawingToolbar';
 import { useStippleEngine } from '@/components/stipple/useStippleEngine';
 import { useImagePreprocess } from '@/components/stipple/useImagePreprocess';
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    setMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
+
 export default function StipplePage() {
+  const isMobile = useIsMobile();
+
   // Image state
   const [imageDataURL, setImageDataURL] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
@@ -112,7 +126,8 @@ export default function StipplePage() {
 
   return (
     <div style={{
-      display: 'flex', height: '100vh', background: '#050507',
+      display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+      height: '100vh', background: '#050507',
       color: '#f0f1fa', fontFamily: '"Inter Tight", system-ui, sans-serif',
       overflow: 'hidden',
     }}>
@@ -144,10 +159,11 @@ export default function StipplePage() {
         edges={edges}
         status={status}
         progress={progress}
+        isMobile={isMobile}
       />
 
       {/* Canvas area */}
-      <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? '55vh' : 'auto' }}>
         <ProgressBar
           progress={progress}
           iteration={iteration}

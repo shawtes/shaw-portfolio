@@ -41,6 +41,7 @@ interface ControlsSidebarProps {
   // Status
   status: 'idle' | 'computing' | 'ready';
   progress: number; // 0-1
+  isMobile?: boolean;
 }
 
 function Slider({ label, value, min, max, step, onChange, unit }: {
@@ -115,7 +116,7 @@ export default function ControlsSidebar(props: ControlsSidebarProps) {
     brightness, contrast, gamma, invert, useCLAHE, onPreprocessChange, previewDataURL,
     dotCount, lloydIterations, minDotSize, maxDotSize, whiteCutoff, onStippleChange, onGenerate,
     renderMode, colorScheme, mouseInteraction, onRenderChange,
-    canvasRef, drawingCanvasRef, particles, edges, status, progress,
+    canvasRef, drawingCanvasRef, particles, edges, status, progress, isMobile,
   } = props;
 
   const handlePreprocess = useCallback((key: string) => (v: number | boolean) => {
@@ -128,8 +129,11 @@ export default function ControlsSidebar(props: ControlsSidebarProps) {
 
   return (
     <div style={{
-      width: 300, padding: '20px 16px', overflowY: 'auto',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
+      width: isMobile ? '100%' : 300,
+      maxHeight: isMobile ? '40vh' : 'none',
+      padding: isMobile ? '16px 12px' : '20px 16px', overflowY: 'auto',
+      borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.06)',
+      borderBottom: isMobile ? '1px solid rgba(255,255,255,0.06)' : 'none',
       background: 'rgba(0,0,0,0.3)',
       display: 'flex', flexDirection: 'column', gap: 0,
     }}>
