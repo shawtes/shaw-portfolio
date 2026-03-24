@@ -13,63 +13,36 @@ const BASE_LERP = 0.088;
 function buildPath(vH: number): string {
   if (vH < 100) return '';
   const s = vH / 12;
+  // y positions for clean half-circle arcs
+  // Start below hero buttons (~95% of first viewport)
+  const y0 = s * 1.15;
   return [
-    // Start from left wall, below hero (~85% down first viewport)
-    `M -20 ${s * 0.85}`,
+    // Enter from left wall, below "View work" buttons
+    `M -20 ${y0}`,
 
-    // Gentle curve entering from left, sweeping right
-    `Q 60 ${s * 0.9}, 150 ${s * 1.1}`,
-    `C 280 ${s * 1.3}, 500 ${s * 1.2}, 600 ${s * 1.5}`,
+    // Half-circle arc #1 — sweeps right (open right semi-oval)
+    `C -20 ${y0 + s * 1.6}, 1020 ${y0 + s * 1.6}, 1020 ${y0 + s * 3.2}`,
 
-    // Smooth sweep further right
-    `C 700 ${s * 1.8}, 800 ${s * 2.0}, 750 ${s * 2.3}`,
+    // Half-circle arc #2 — sweeps back left (open left semi-oval, goes off-screen left)
+    `C 1020 ${y0 + s * 4.6}, -80 ${y0 + s * 4.6}, -80 ${y0 + s * 5.8}`,
 
-    // Loop #1 — off right edge, smooth circle back
-    `C 700 ${s * 2.5}, 1080 ${s * 2.4}, 1100 ${s * 2.7}`,
-    `C 1120 ${s * 3.0}, 1040 ${s * 3.2}, 920 ${s * 3.1}`,
-    `C 800 ${s * 3.0}, 780 ${s * 3.3}, 700 ${s * 3.4}`,
+    // Half-circle arc #3 — sweeps right again (bigger arc)
+    `C -80 ${y0 + s * 7.0}, 1060 ${y0 + s * 7.0}, 1060 ${y0 + s * 8.0}`,
 
-    // Drift left with lazy S-curve
-    `C 600 ${s * 3.6}, 350 ${s * 3.7}, 200 ${s * 4.0}`,
-    `C 100 ${s * 4.2}, 60 ${s * 4.4}, 40 ${s * 4.6}`,
+    // Half-circle arc #4 — sweeps left, exits off left edge
+    `C 1060 ${y0 + s * 9.0}, -40 ${y0 + s * 9.0}, -40 ${y0 + s * 9.8}`,
 
-    // Loop #2 — off left edge, smooth return
-    `C 20 ${s * 4.8}, -80 ${s * 4.7}, -100 ${s * 5.0}`,
-    `C -120 ${s * 5.3}, -60 ${s * 5.5}, 40 ${s * 5.4}`,
-    `C 140 ${s * 5.3}, 180 ${s * 5.5}, 220 ${s * 5.7}`,
-
-    // Sweep right across mid-page
-    `C 300 ${s * 5.9}, 550 ${s * 6.0}, 680 ${s * 6.3}`,
-
-    // Loop #3 — tight mid-page curl
-    `C 750 ${s * 6.5}, 780 ${s * 6.3}, 740 ${s * 6.1}`,
-    `C 700 ${s * 5.9}, 640 ${s * 6.1}, 660 ${s * 6.4}`,
-    `C 680 ${s * 6.7}, 750 ${s * 6.8}, 800 ${s * 7.0}`,
-
-    // Sweep right and off edge
-    `C 860 ${s * 7.2}, 950 ${s * 7.3}, 1000 ${s * 7.5}`,
-
-    // Loop #4 — off right edge, big lazy arc back
-    `C 1060 ${s * 7.7}, 1120 ${s * 7.9}, 1100 ${s * 8.2}`,
-    `C 1080 ${s * 8.5}, 980 ${s * 8.6}, 850 ${s * 8.7}`,
-
-    // Final meander left
-    `C 700 ${s * 8.9}, 400 ${s * 9.1}, 250 ${s * 9.4}`,
-    `C 150 ${s * 9.6}, 80 ${s * 9.8}, 60 ${s * 10.0}`,
-
-    // Trail off bottom-left
-    `C 40 ${s * 10.3}, 100 ${s * 10.8}, 200 ${s * 11.2}`,
-    `Q 300 ${s * 11.6}, 400 ${vH}`,
+    // Final gentle arc trailing off bottom
+    `C -40 ${y0 + s * 10.4}, 500 ${y0 + s * 10.4}, 500 ${vH}`,
   ].join(' ');
 }
 
-// Define which progress ranges are "loop" zones where the line speeds up
-// Each loop zone gets faster lerp
+// Speed up at the turnaround points of each arc
 const LOOP_ZONES: [number, number][] = [
-  [0.18, 0.28],   // Loop #1
-  [0.38, 0.48],   // Loop #2
-  [0.52, 0.60],   // Loop #3
-  [0.64, 0.74],   // Loop #4
+  [0.15, 0.22],   // Arc #1 turnaround (right side)
+  [0.35, 0.42],   // Arc #2 turnaround (left side)
+  [0.55, 0.62],   // Arc #3 turnaround (right side)
+  [0.75, 0.82],   // Arc #4 turnaround (left side)
 ];
 
 function getLerpForProgress(progress: number): number {
