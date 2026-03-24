@@ -88,9 +88,9 @@ export default function ParticleTestPage() {
 
     // Elliptical vignette — focus on face/upper body, fade out background
     const vigCx = sampleW * 0.43;
-    const vigCy = sampleH * 0.40;
+    const vigCy = sampleH * 0.42;  // lower center so forehead has more room
     const vigRx = sampleW * 0.42;
-    const vigRy = sampleH * 0.50;
+    const vigRy = sampleH * 0.55;  // taller to include full forehead + jawline
 
     const vignette = new Float32Array(sampleW * sampleH);
     for (let y = 0; y < sampleH; y++) {
@@ -315,7 +315,7 @@ export default function ParticleTestPage() {
           p.y += p.vy;
         }
 
-        // Draw edges — stronger lines with vignette fade
+        // Draw edges — tonal shading: line brightness matches average of endpoints
         ctx.lineWidth = 0.5;
         for (const [a, b] of edges) {
           const pa = particles[a];
@@ -325,17 +325,24 @@ export default function ParticleTestPage() {
           const d = Math.sqrt(dx * dx + dy * dy);
           const distFade = 1 - d / (params.maxEdgeLen * 1.2);
           const edgeFade = Math.min(pa.fade, pb.fade);
-          const alpha = Math.max(0, 0.25 * distFade * edgeFade);
+          // Tonal: stretch + gamma like points
+          const avgRaw = (pa.brightness + pb.brightness) / 2;
+          const avgB = Math.pow(Math.min(1, Math.max(0, (avgRaw - 0.09) / 0.55)), 0.7);
+          const tonalAlpha = Math.max(0, (0.1 + avgB * 0.3) * distFade * edgeFade);
 
           const mx = (pa.x + pb.x) / 2 - mouse.x;
           const my = (pa.y + pb.y) / 2 - mouse.y;
           const md = Math.sqrt(mx * mx + my * my);
           if (md < mouseRadius * 1.3) {
             const glow = 1 - md / (mouseRadius * 1.3);
-            ctx.strokeStyle = `rgba(193,255,0,${alpha + glow * 0.3})`;
+            ctx.strokeStyle = `rgba(193,255,0,${tonalAlpha + glow * 0.3})`;
             ctx.lineWidth = 0.7;
           } else {
-            ctx.strokeStyle = `rgba(180,180,195,${alpha})`;
+            // Warm highlights, cool shadows
+            const r = Math.round(100 + avgB * 130);
+            const g = Math.round(100 + avgB * 125);
+            const bl = Math.round(115 + avgB * 100);
+            ctx.strokeStyle = `rgba(${r},${g},${bl},${tonalAlpha})`;
             ctx.lineWidth = 0.5;
           }
 
@@ -345,10 +352,25 @@ export default function ParticleTestPage() {
           ctx.stroke();
         }
 
-        // Draw points with vignette fade
+        // Draw points — TONAL SHADING with contrast stretch
         for (const p of particles) {
-          const darkness = 1 - p.brightness;
-          const alpha = (0.25 + darkness * 0.65) * p.fade;
+          // Remap brightness: the photo is dark (nighttime), so stretch 0.09-0.65 → 0-1
+          const rawB = p.brightness;
+          const stretched = Math.min(1, Math.max(0, (rawB - 0.09) / 0.55));
+          // Apply gamma curve for punchier contrast
+          const b = Math.pow(stretched, 0.7);
+          const darkness = 1 - b;
+
+          // Alpha: strong base, highlights nearly opaque
+          const alpha = (0.4 + b * 0.55) * p.fade;
+
+          // Color: highlights → bright white, shadows → muted blue-gray
+          const r = Math.round(110 + b * 148);
+          const g = Math.round(110 + b * 146);
+          const bl2 = Math.round(125 + b * 128);
+
+          // Size: dark feature edges (eyes, brows, nostrils) get bigger for definition
+          const sizeBoost = darkness > 0.55 ? 1.35 : 1.0;
 
           const mdx = p.x - mouse.x;
           const mdy = p.y - mouse.y;
@@ -357,13 +379,13 @@ export default function ParticleTestPage() {
             const glow = 1 - md / mouseRadius;
             ctx.fillStyle = `rgba(193,255,0,${glow * 0.5 * p.fade})`;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, p.size * sizeBoost * 2.5, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          ctx.fillStyle = `rgba(220,220,230,${alpha})`;
+          ctx.fillStyle = `rgba(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,bl2)},${alpha})`;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size * sizeBoost, 0, Math.PI * 2);
           ctx.fill();
         }
 

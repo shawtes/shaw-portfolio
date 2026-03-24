@@ -15,8 +15,8 @@ self.onmessage = function(e) {
   }
 
   // Vignette
-  const vigCx = sampleW * 0.43, vigCy = sampleH * 0.40;
-  const vigRx = sampleW * 0.42, vigRy = sampleH * 0.50;
+  const vigCx = sampleW * 0.43, vigCy = sampleH * 0.42;
+  const vigRx = sampleW * 0.42, vigRy = sampleH * 0.55;
   const vignette = new Float32Array(sampleW * sampleH);
   for (let y = 0; y < sampleH; y++) {
     for (let x = 0; x < sampleW; x++) {
