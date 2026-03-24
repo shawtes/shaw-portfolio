@@ -4,7 +4,7 @@ import { PROJECTS } from '../data/projects';
 import { EXPERIENCE } from '../data/experience';
 import { SKILLS, AWARDS } from '../data/skills';
 import VerticalThreadLine from './ui/VerticalThreadLine';
-import ParticlePortrait from './ParticlePortrait';
+import StipplePortrait from './StipplePortrait';
 
 /*
   PORTFOLIO — Lusion-style
@@ -287,14 +287,9 @@ export default function Portfolio() {
         transform: `translateY(${scrollY * -0.05}px)`,
         willChange: 'transform',
       }}>
-        <ParticlePortrait
-          src="/portrait.png"
+        <StipplePortrait
           width={isMobile ? 380 : 600}
           height={isMobile ? 440 : 700}
-          particleCount={isMobile ? 2000 : 4000}
-          maxLineLength={isMobile ? 16 : 20}
-          pointColor={[180, 180, 195]}
-          lineColor={[120, 120, 140]}
           accentColor={[193, 255, 0]}
           style={{ pointerEvents: 'auto' }}
         />
@@ -356,11 +351,11 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* ═══ FROSTED CONTENT — semi-transparent, portrait visible through ═══ */}
+      {/* ═══ FROSTED CONTENT — light tint, portrait visible through ═══ */}
       <div style={{
-        background: 'rgba(5, 5, 7, 0.6)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: 'rgba(5, 5, 7, 0.35)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
       } as React.CSSProperties}>
 
       {/* ═══ STATS BAR — counters ═══ */}
@@ -522,10 +517,12 @@ export default function Portfolio() {
               {AWARDS.map((a, i) => (
                 <Rv key={i} delay={i * 0.08}>
                   <div style={{
-                    background: 'rgba(10, 10, 15, 0.85)',
+                    background: 'rgba(10, 10, 15, 0.55)',
                     border: '1px solid rgba(255,255,255,0.06)',
                     borderRadius: 20,
                     padding: 24,
+                    backdropFilter: 'blur(6px)',
+                    WebkitBackdropFilter: 'blur(6px)',
                     transition: 'border-color .3s, transform .3s',
                   }}>
                     <div style={{ fontFamily: 'var(--font)', fontSize: 32, fontWeight: 900, color: a.place === '1st' ? '#c1ff00' : '#555', lineHeight: 1, marginBottom: 8 }}>
