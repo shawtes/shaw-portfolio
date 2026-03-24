@@ -11,7 +11,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 
-const LERP = 0.035;
+const LERP = 0.0315;
 
 function buildPath(vH: number): string {
   if (vH < 100) return '';
