@@ -36,50 +36,43 @@ function Shaw({ progress, landed }: { progress: number; landed: boolean }) {
 
     if (p < 0.18) {
       // Standing in front of desk, facing monitor (-Z direction)
-      // Life-sized: scale 0.9 → ~1.6 units tall (soldier.glb is ~180 native units)
-      // Position: feet on ground (y=0), standing behind desk (z=0.6)
       group.current.position.set(0, 0, 0.6);
-      group.current.position.y += Math.sin(t * 1.2) * 0.003; // subtle breathing
-      group.current.rotation.set(0, Math.PI, 0); // face monitor (-Z)
+      group.current.position.y += Math.sin(t * 1.2) * 0.003;
+      group.current.rotation.set(0, 0, 0); // face monitor (-Z)
       group.current.scale.setScalar(0.9);
     } else if (p < 0.32) {
       // Getting pulled from standing position toward monitor
       const pull = (p - 0.18) / 0.14;
       const ease = pull * pull * pull;
       group.current.position.set(0, ease * 0.5, 0.6 - ease * 1.2);
-      group.current.rotation.set(-ease * 0.8, Math.PI, 0);
+      group.current.rotation.set(-ease * 0.8, 0, 0);
       group.current.scale.setScalar(0.9 * (1 - ease * 0.5));
     } else if (p < 0.85) {
-      // INSIDE COMPUTER: Shaw travels into -Z through the grid
-      // Guide wire: x=0, y=0, z goes from 0.5 to -5 (through many cells)
-      // Scale shrinks as he goes deeper — perspective + distance effect
+      // INSIDE COMPUTER: Shaw travels into -Z
       const insideT = (p - 0.32) / 0.53;
 
       const startZ = 1;
       const endZ = -12;
       const shawZ = startZ + (endZ - startZ) * insideT;
 
-      // Scale: small enough to fit through cell openings, shrinks further
       const scaleStart = 0.35;
       const scaleEnd = 0.08;
       const shawScale = scaleStart + (scaleEnd - scaleStart) * insideT;
 
-      // Stay on guide wire: x=0, y=0, straight line into -Z
-      // Offset Y down slightly so he's below center of camera view
       group.current.position.set(0, -0.3, shawZ);
       group.current.scale.setScalar(shawScale);
 
-      // Face away from camera (into -Z), slight tumble
+      // Face into -Z, slight tumble
       limbPhase.current += delta * 1.5;
       const tumbleDecay = 1 - insideT * 0.7;
       group.current.rotation.x = -Math.PI * 0.3 + Math.sin(limbPhase.current * 0.6) * 0.15 * tumbleDecay;
-      group.current.rotation.y = Math.PI;
+      group.current.rotation.y = 0;
       group.current.rotation.z = Math.cos(limbPhase.current * 0.5) * 0.1 * tumbleDecay;
     } else {
       // Emergence
       const emerge = (p - 0.85) / 0.15;
       group.current.position.set(0, -0.3, -12);
-      group.current.rotation.set(0, Math.PI, 0);
+      group.current.rotation.set(0, 0, 0);
       group.current.scale.setScalar(0.08 * (1 - emerge));
     }
   });
