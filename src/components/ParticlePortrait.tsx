@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
+import Delaunator from 'delaunator';
 
 /*
   PARTICLE PORTRAIT — v3
@@ -57,34 +58,195 @@ export default function ParticlePortrait({
   const rafRef = useRef<number>(0);
   const readyRef = useRef(false);
 
-  // Fallback: simple rejection sampling without Lloyd (no worker needed)
-  const fallbackSample = (data: Uint8ClampedArray, sw: number, sh: number) => {
-    const gray = new Float32Array(sw * sh);
-    for (let i = 0; i < sw * sh; i++) {
+  const sampleImage = useCallback((img: HTMLImageElement) => {
+    const offscreen = document.createElement('canvas');
+    const sampleW = Math.min(img.naturalWidth, 500);
+    const sampleH = Math.round(sampleW * (img.naturalHeight / img.naturalWidth));
+    offscreen.width = sampleW;
+    offscreen.height = sampleH;
+    const octx = offscreen.getContext('2d')!;
+    octx.drawImage(img, 0, 0, sampleW, sampleH);
+    const imageData = octx.getImageData(0, 0, sampleW, sampleH);
+    const data = imageData.data;
+
+    // Build grayscale brightness map
+    const gray = new Float32Array(sampleW * sampleH);
+    for (let i = 0; i < sampleW * sampleH; i++) {
       const idx = i * 4;
       gray[i] = (data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114) / 255;
     }
-    const particles: Particle[] = [];
-    let attempts = 0;
-    while (particles.length < particleCount && attempts < particleCount * 50) {
-      attempts++;
-      const sx = Math.random() * (sw - 2) + 1;
-      const sy = Math.random() * (sh - 2) + 1;
-      const idx = Math.floor(sy) * sw + Math.floor(sx);
-      const b = gray[idx];
-      if (b >= bgThreshold && Math.random() < Math.pow(1 - b, 1.5)) {
-        const px = (sx / sw) * width;
-        const py = (sy / sh) * height;
-        particles.push({
-          x: px, y: py, ox: px, oy: py, vx: 0, vy: 0,
-          size: 0.5 + (1 - b) * 2.2, brightness: b, fade: 1,
-        });
+
+    // Elliptical vignette — focus on face/upper body, fade out background
+    // Center slightly above midpoint (face is upper-center in most portraits)
+    const vigCx = sampleW * 0.43;  // includes right eye/brow
+    const vigCy = sampleH * 0.40;  // lower for jawline/lips
+    const vigRx = sampleW * 0.42;  // wider for hair + right features
+    const vigRy = sampleH * 0.50;  // taller for jawline
+
+    const vignette = new Float32Array(sampleW * sampleH);
+    for (let y = 0; y < sampleH; y++) {
+      for (let x = 0; x < sampleW; x++) {
+        const nx = (x - vigCx) / vigRx;
+        const ny = (y - vigCy) / vigRy;
+        const d = Math.sqrt(nx * nx + ny * ny);
+        // Soft falloff: fully visible inside d<0.6, fades to 0 at d=1.2
+        vignette[y * sampleW + x] = Math.max(0, Math.min(1, 1 - Math.pow(Math.max(0, (d - 0.5) / 0.6), 1.6)));
       }
     }
+
+    // Sobel edge detection — boosts eyes, brows, lips, jawline
+    const edges = new Float32Array(sampleW * sampleH);
+    for (let y = 1; y < sampleH - 1; y++) {
+      for (let x = 1; x < sampleW - 1; x++) {
+        const tl = gray[(y-1)*sampleW+(x-1)], t = gray[(y-1)*sampleW+x], tr = gray[(y-1)*sampleW+(x+1)];
+        const l = gray[y*sampleW+(x-1)], r = gray[y*sampleW+(x+1)];
+        const bl = gray[(y+1)*sampleW+(x-1)], b2 = gray[(y+1)*sampleW+x], br = gray[(y+1)*sampleW+(x+1)];
+        const gx = -tl - 2*l - bl + tr + 2*r + br;
+        const gy = -tl - 2*t - tr + bl + 2*b2 + br;
+        edges[y * sampleW + x] = Math.sqrt(gx*gx + gy*gy);
+      }
+    }
+    let maxEdge = 0;
+    for (let i = 0; i < edges.length; i++) if (edges[i] > maxEdge) maxEdge = edges[i];
+    if (maxEdge > 0) for (let i = 0; i < edges.length; i++) edges[i] /= maxEdge;
+
+    // Build density map: darkness + edge boost * vignette
+    const density = new Float32Array(sampleW * sampleH);
+    let maxDensity = 0;
+    for (let i = 0; i < gray.length; i++) {
+      const b = gray[i];
+      const v = vignette[i];
+      const e = edges[i];
+      if (b < bgThreshold || v < 0.01) {
+        density[i] = 0;
+      } else {
+        const tonalDensity = Math.pow(1 - b, 1.5);
+        const edgeBoost = Math.pow(e, 0.8) * 0.6;
+        density[i] = Math.max(tonalDensity, tonalDensity + edgeBoost) * v;
+      }
+      if (density[i] > maxDensity) maxDensity = density[i];
+    }
+    if (maxDensity > 0) {
+      for (let i = 0; i < density.length; i++) density[i] /= maxDensity;
+    }
+
+    // STEP 1: Rejection sampling by darkness * vignette
+    const points: number[] = [];
+    let attempts = 0;
+    const maxAttempts = particleCount * 50;
+    while (points.length / 2 < particleCount && attempts < maxAttempts) {
+      attempts++;
+      const sx = Math.random() * (sampleW - 2) + 1;
+      const sy = Math.random() * (sampleH - 2) + 1;
+      const idx = Math.floor(sy) * sampleW + Math.floor(sx);
+      const d = density[idx];
+      if (d > 0 && Math.random() < d) {
+        points.push(sx, sy);
+      }
+    }
+
+    // STEP 2: Weighted Lloyd relaxation
+    const n = points.length / 2;
+    for (let iter = 0; iter < lloydIterations; iter++) {
+      if (n < 3) break;
+
+      const weights = new Float64Array(n);
+      const cx = new Float64Array(n);
+      const cy = new Float64Array(n);
+
+      const step = 2;
+      for (let py = 0; py < sampleH; py += step) {
+        for (let px = 0; px < sampleW; px += step) {
+          const w = density[py * sampleW + px];
+          if (w <= 0) continue;
+
+          let minDist = Infinity;
+          let owner = 0;
+          for (let i = 0; i < n; i++) {
+            const dx = points[i * 2] - px;
+            const dy = points[i * 2 + 1] - py;
+            const dist = dx * dx + dy * dy;
+            if (dist < minDist) {
+              minDist = dist;
+              owner = i;
+            }
+          }
+
+          weights[owner] += w;
+          cx[owner] += w * px;
+          cy[owner] += w * py;
+        }
+      }
+
+      for (let i = 0; i < n; i++) {
+        if (weights[i] > 0) {
+          const centX = cx[i] / weights[i];
+          const centY = cy[i] / weights[i];
+          points[i * 2] += (centX - points[i * 2]) * 1.8;
+          points[i * 2 + 1] += (centY - points[i * 2 + 1]) * 1.8;
+          points[i * 2] = Math.max(1, Math.min(sampleW - 2, points[i * 2]));
+          points[i * 2 + 1] = Math.max(1, Math.min(sampleH - 2, points[i * 2 + 1]));
+        }
+      }
+    }
+
+    // STEP 3: Convert to canvas coordinates with vignette fade
+    const particles: Particle[] = [];
+    for (let i = 0; i < n; i++) {
+      const sx = points[i * 2];
+      const sy = points[i * 2 + 1];
+      const px = (sx / sampleW) * width;
+      const py = (sy / sampleH) * height;
+      const idx = Math.floor(sy) * sampleW + Math.floor(sx);
+      const b = gray[idx] || 0.5;
+      const v = vignette[idx] || 0;
+      const darkness = 1 - b;
+
+      particles.push({
+        x: px, y: py,
+        ox: px, oy: py,
+        vx: 0, vy: 0,
+        size: 0.5 + darkness * 2.2,
+        brightness: b,
+        fade: v,
+      });
+    }
+
+    // STEP 4: Delaunay triangulation
+    const delaunayEdges: [number, number][] = [];
+    if (particles.length >= 3) {
+      const coords = new Float64Array(particles.length * 2);
+      for (let i = 0; i < particles.length; i++) {
+        coords[i * 2] = particles[i].ox;
+        coords[i * 2 + 1] = particles[i].oy;
+      }
+      const delaunay = new Delaunator(coords);
+      const tris = delaunay.triangles;
+      const maxSq = maxLineLength * maxLineLength;
+      const edgeSet = new Set<string>();
+      for (let i = 0; i < tris.length; i += 3) {
+        const pairs: [number, number][] = [
+          [tris[i], tris[i + 1]],
+          [tris[i + 1], tris[i + 2]],
+          [tris[i + 2], tris[i]],
+        ];
+        for (const [a, b] of pairs) {
+          const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+          if (edgeSet.has(key)) continue;
+          edgeSet.add(key);
+          const dx = particles[a].ox - particles[b].ox;
+          const dy = particles[a].oy - particles[b].oy;
+          if (dx * dx + dy * dy <= maxSq) {
+            delaunayEdges.push([a, b]);
+          }
+        }
+      }
+    }
+
     particlesRef.current = particles;
-    edgesRef.current = [];
+    edgesRef.current = delaunayEdges;
     readyRef.current = true;
-  };
+  }, [width, height, particleCount, maxLineLength, bgThreshold, lloydIterations]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -95,50 +257,13 @@ export default function ParticlePortrait({
     canvas.height = height * dpr;
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
+
     const ctx = canvas.getContext('2d')!;
     ctx.scale(dpr, dpr);
 
-    // Load image then offload to Web Worker
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const offscreen = document.createElement('canvas');
-      const sampleW = Math.min(img.naturalWidth, 500);
-      const sampleH = Math.round(sampleW * (img.naturalHeight / img.naturalWidth));
-      offscreen.width = sampleW;
-      offscreen.height = sampleH;
-      const octx = offscreen.getContext('2d')!;
-      octx.drawImage(img, 0, 0, sampleW, sampleH);
-      const imageData = octx.getImageData(0, 0, sampleW, sampleH);
-
-      // Offload heavy computation to Web Worker
-      try {
-        const worker = new Worker('/workers/lloyd-worker.js');
-        const buffer = imageData.data.buffer.slice(0);
-
-        worker.onerror = () => {
-          // Worker failed — fall back to simple sampling on main thread
-          console.warn('Lloyd worker failed, using fallback');
-          fallbackSample(imageData.data, sampleW, sampleH);
-          worker.terminate();
-        };
-
-        worker.onmessage = (ev: MessageEvent) => {
-          particlesRef.current = ev.data.particles;
-          edgesRef.current = ev.data.edges;
-          readyRef.current = true;
-          worker.terminate();
-        };
-
-        worker.postMessage({
-          imageData: buffer,
-          sampleW, sampleH, particleCount, bgThreshold, lloydIterations, width, height,
-        }, [buffer]);
-      } catch {
-        // Worker not supported — fall back
-        fallbackSample(imageData.data, sampleW, sampleH);
-      }
-    };
+    img.onload = () => sampleImage(img);
     img.src = src;
 
     // Global mouse tracking — reacts through overlapping content
@@ -253,7 +378,7 @@ export default function ParticlePortrait({
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('mousemove', onGlobalMouseMove);
     };
-  }, [src, width, height, maxLineLength, pointColor, lineColor, accentColor, particleCount, bgThreshold, lloydIterations]);
+  }, [src, width, height, maxLineLength, pointColor, lineColor, accentColor, sampleImage]);
 
   return (
     <canvas

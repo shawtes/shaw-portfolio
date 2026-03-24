@@ -3,17 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-const IntroExperience = dynamic(() => import('../components/IntroExperience'), {
-  ssr: false,
-  loading: () => (
-    <div style={{
-      position: 'fixed', inset: 0, background: '#050507',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <div style={{ color: '#22D3EE', fontFamily: 'monospace', fontSize: 13, opacity: 0.6 }}>Loading...</div>
-    </div>
-  ),
-});
+const IntroExperience = dynamic(() => import('../components/IntroExperience'), { ssr: false });
 const Portfolio = dynamic(() => import('../components/Portfolio'), { ssr: false });
 
 export default function Page() {
@@ -50,22 +40,6 @@ export default function Page() {
       )}
 
       {phase === 'portfolio' && <Portfolio />}
-
-      {/* Skip intro button */}
-      {phase === 'intro' && (
-        <button
-          onClick={handleIntroComplete}
-          style={{
-            position: 'fixed', bottom: 40, right: 40, zIndex: 20,
-            fontFamily: 'monospace', fontSize: 11, color: '#555',
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            padding: '8px 16px', borderRadius: 100, cursor: 'pointer',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}
-        >
-          Skip →
-        </button>
-      )}
     </div>
   );
 }
