@@ -282,7 +282,7 @@ export default function Portfolio() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        paddingRight: isMobile ? '5vw' : '15vw',
+        paddingRight: isMobile ? '3vw' : '5vw',
         zIndex: 0,
         pointerEvents: 'none',
         transform: `translateY(${scrollY * -0.05}px)`,
