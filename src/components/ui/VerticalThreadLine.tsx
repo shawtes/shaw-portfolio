@@ -182,7 +182,7 @@ export default function VerticalThreadLine({
   return (
     <div
       ref={wrapRef}
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }}
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4 }}
     >
       <svg
         viewBox={`0 0 1000 ${size.h}`}
