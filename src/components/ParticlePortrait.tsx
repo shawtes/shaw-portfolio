@@ -4,7 +4,7 @@ import Delaunator from 'delaunator';
 
 interface Particle {
   x: number; y: number; ox: number; oy: number;
-  vx: number; vy: number; size: number; brightness: number; fade: number;
+  vx: number; vy: number; size: number; brightness: number; fade: number; edge: number;
 }
 
 export default function ParticlePortrait({
@@ -55,13 +55,12 @@ export default function ParticlePortrait({
         const buffer = imageData.data.buffer.slice(0);
 
         worker.onmessage = (ev: MessageEvent) => {
-          const { xs, ys, brightnesses, fades, count } = ev.data;
-          // Build particles
+          const { xs, ys, brightnesses, fades, edgeVals, count } = ev.data;
           const particles: Particle[] = [];
           for (let i = 0; i < count; i++) {
             const darkness = 1 - brightnesses[i];
             particles.push({ x: xs[i], y: ys[i], ox: xs[i], oy: ys[i], vx: 0, vy: 0,
-              size: 0.5 + darkness * 2.2, brightness: brightnesses[i], fade: fades[i] });
+              size: 1.0 + darkness * 1.2, brightness: brightnesses[i], fade: fades[i], edge: edgeVals[i] });
           }
           // Delaunay on main thread — fast (~5ms for 4000 points)
           const delaunayEdges: [number, number][] = [];
@@ -139,54 +138,46 @@ export default function ParticlePortrait({
         p.x += p.vx; p.y += p.vy;
       }
 
-      // Draw edges — tonal shading
-      ctx.lineWidth = 0.5;
+      // Draw edges — white base, darken at feature edges
       for (const [a, b] of edges) {
         const pa = particles[a], pb = particles[b];
         const edx = pa.x - pb.x, edy = pa.y - pb.y;
         const d = Math.sqrt(edx * edx + edy * edy);
-        const distFade = 1 - d / (maxLineLength * 1.2);
-        const edgeFade = Math.min(pa.fade, pb.fade);
-        const avgRaw = (pa.brightness + pb.brightness) / 2;
-        const avgB = Math.pow(Math.min(1, Math.max(0, (avgRaw - 0.09) / 0.55)), 0.7);
-        const tonalAlpha = Math.max(0, (0.1 + avgB * 0.3) * distFade * edgeFade);
+        const distFade = Math.max(0, 1 - d / 20);
+        const vFade = Math.min(pa.fade, pb.fade);
+        const avgEdge = (pa.edge + pb.edge) / 2;
+        const bright = Math.round(240 - avgEdge * 190);
+        const alpha = (0.08 + avgEdge * 0.18) * distFade * vFade;
 
         const mx = (pa.x + pb.x) / 2 - mouse.x, my = (pa.y + pb.y) / 2 - mouse.y;
         const md = Math.sqrt(mx * mx + my * my);
         if (md < mouseRadius * 1.3) {
           const glow = 1 - md / (mouseRadius * 1.3);
-          ctx.strokeStyle = `rgba(${accentColor[0]},${accentColor[1]},${accentColor[2]},${tonalAlpha + glow * 0.3})`;
+          ctx.strokeStyle = `rgba(${accentColor[0]},${accentColor[1]},${accentColor[2]},${alpha + glow * 0.15})`;
           ctx.lineWidth = 0.7;
         } else {
-          const r = Math.round(100 + avgB * 130);
-          const g = Math.round(100 + avgB * 125);
-          const bl = Math.round(115 + avgB * 100);
-          ctx.strokeStyle = `rgba(${r},${g},${bl},${tonalAlpha})`;
+          ctx.strokeStyle = `rgba(${bright},${bright},${bright},${alpha})`;
           ctx.lineWidth = 0.5;
         }
         ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
       }
 
-      // Draw points — tonal shading with contrast stretch
+      // Draw points — WHITE everywhere, DARK at edges
       for (const p of particles) {
-        const stretched = Math.min(1, Math.max(0, (p.brightness - 0.09) / 0.55));
-        const b = Math.pow(stretched, 0.7);
-        const darkness = 1 - b;
-        const alpha = (0.4 + b * 0.55) * p.fade;
-        const r = Math.round(110 + b * 148);
-        const g = Math.round(110 + b * 146);
-        const bl = Math.round(125 + b * 128);
-        const sizeBoost = darkness > 0.55 ? 1.35 : 1.0;
+        const e = p.edge;
+        const bright = Math.round(245 - e * 210);
+        const alpha = (0.4 + e * 0.45) * p.fade;
+        const size = p.size * (1 + e * 0.5);
 
         const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
         const md = Math.sqrt(mdx * mdx + mdy * mdy);
         if (md < mouseRadius) {
           const glow = 1 - md / mouseRadius;
-          ctx.fillStyle = `rgba(${accentColor[0]},${accentColor[1]},${accentColor[2]},${glow * 0.5 * p.fade})`;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.size * sizeBoost * 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = `rgba(${accentColor[0]},${accentColor[1]},${accentColor[2]},${glow * 0.45 * p.fade})`;
+          ctx.beginPath(); ctx.arc(p.x, p.y, size * 2.5, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.fillStyle = `rgba(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,bl)},${alpha})`;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * sizeBoost, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(${bright},${bright},${bright},${alpha})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI * 2); ctx.fill();
       }
 
       rafRef.current = requestAnimationFrame(animate);
